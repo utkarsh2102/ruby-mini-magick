@@ -1,0 +1,5 @@
+ruby-mini-magick (3.5.0-1) unstable; urgency=low
+
+  * Initial release (Closes: #692057 )
+
+ -- Markus Tornow <tornow@riseup.net>  Wed, 31 Oct 2012 18:35:43 +0100
