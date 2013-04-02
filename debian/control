@@ -3,7 +3,7 @@ Section: ruby
 Priority: optional
 Maintainer: Debian Ruby Extras Maintainers <pkg-ruby-extras-maintainers@lists.alioth.debian.org>
 Uploaders: Markus Tornow <tornow@riseup.net>
-Build-Depends: debhelper (>= 7.0.50~), gem2deb (>= 0.3.0~), imagemagick,  rake, ruby-test-unit, ruby-subexec
+Build-Depends: debhelper (>= 7.0.50~), gem2deb (>= 0.3.0~), imagemagick,  rake, ruby-test-unit, ruby-subexec, ruby-mini-magick (>= 6.6.3~)
 Standards-Version: 3.9.4
 Vcs-Git: git://anonscm.debian.org/pkg-ruby-extras/ruby-mini-magick.git
 #Vcs-Browser: http://anonscm.debian.org/?p=pkg-ruby-extras/ruby-mini-magick.git;a=summary
