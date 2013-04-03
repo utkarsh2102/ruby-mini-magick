@@ -6,7 +6,7 @@ Uploaders: Markus Tornow <tornow@riseup.net>
 Build-Depends: debhelper (>= 7.0.50~), gem2deb (>= 0.3.0~), imagemagick (>= 6.6.3~) ,  rake, ruby-test-unit, ruby-subexec
 Standards-Version: 3.9.4
 Vcs-Git: git://anonscm.debian.org/pkg-ruby-extras/ruby-mini-magick.git
-#Vcs-Browser: http://anonscm.debian.org/?p=pkg-ruby-extras/ruby-mini-magick.git;a=summary
+Vcs-Browser: http://anonscm.debian.org/?p=pkg-ruby-extras/ruby-mini-magick.git;a=summary
 Homepage: https://github.com/minimagick/minimagick
 XS-Ruby-Versions: all
 
