@@ -14,9 +14,8 @@ Package: ruby-mini-magick
 Architecture: all
 XB-Ruby-Versions: ${ruby:Versions}
 Depends: ${shlibs:Depends}, ${misc:Depends}, ruby | ruby-interpreter, imagemagick (>= 6.6.3~) | graphicsmagick, ruby-subexec
-Description: manipulation of images with minimal use of memory via ImageMagick
- MiniMagick is a Ruby library providing a wrapper around ImageMagick or GraphicsMagick,
- allowing manipulation of images with minimal use of memory. MiniMagick gives 
- access to all commandline options provided by ImageMagick (found here: 
- http://www.imagemagick.org/script/mogrify.php). 
- 
+Description: wrapper for ImageMagick with a small memory footprint
+ MiniMagick is a Ruby library providing a wrapper around
+ ImageMagick or GraphicsMagick, allowing manipulation of images with
+ minimal use of memory. MiniMagick gives access to all the commandline
+ options provided by ImageMagick. 
