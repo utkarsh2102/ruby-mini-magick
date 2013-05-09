@@ -1,6 +1,7 @@
 ruby-mini-magick (3.5.0-2) unstable; urgency=low
 
-  * Applying patch remove-remote-test (Closes: #706517) 
+  * Applying patch remove-remote-test by Felix Geyer (thanks to him) 
+    to disable tests requiring network connectivity (Closes: #706517) 
 
  -- Markus Tornow <tornow@riseup.net>  Thu, 09 May 2013 17:51:29 +0200
 

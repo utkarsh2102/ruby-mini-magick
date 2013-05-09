@@ -1,6 +1,10 @@
 Description: Remove tests that require internet connectivity.
 Author: Felix Geyer <fgeyer@debian.org>
-
+Bug-Debian: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%23706517+ 
+Forwarded: no
+Last-Update: 2013-05-09
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 --- ruby-mini-magick-3.5.0.orig/test/image_test.rb
 +++ ruby-mini-magick-3.5.0/test/image_test.rb
 @@ -55,18 +55,6 @@ class ImageTest < Test::Unit::TestCase
