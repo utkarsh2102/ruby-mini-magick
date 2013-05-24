@@ -1,7 +1,7 @@
-Description: removing require of rubygems from test_helper.rb 
+Description: remove require rubygems from test_helper.rb 
 Author: Markus Tornow <tornow@riseup.net>
 Forwarded: not-needed
-Last-Update: 2013-03-31
+Last-Update: 2013-05-24
 ---
 This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 --- a/test/test_helper.rb
@@ -11,10 +11,10 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
  require 'test/unit'
  require 'pathname'
  require 'tempfile'
-@@ -18,4 +17,4 @@ module MiniMagickTestFiles
-   PNG_PATH             = test_files + "/png.png"
-   COMP_IMAGE_PATH      = test_files + "/composited.jpg"
-   ERRONEOUS_IMAGE_PATH = test_files + "/erroneous.jpg"
+@@ -19,4 +18,4 @@ module MiniMagickTestFiles
+   PNG_PATH                 = test_files + "/png.png"
+   COMP_IMAGE_PATH          = test_files + "/composited.jpg"
+   ERRONEOUS_IMAGE_PATH     = test_files + "/erroneous.jpg"
 -end
 \ No newline at end of file
 +end

@@ -1,3 +1,9 @@
+ruby-mini-magick (3.6.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Markus Tornow <tornow@riseup.net>  Fri, 24 May 2013 15:14:46 +0200
+
 ruby-mini-magick (3.5.0-2) unstable; urgency=low
 
   * Applying patch remove-remote-test by Felix Geyer (thanks to him) 
