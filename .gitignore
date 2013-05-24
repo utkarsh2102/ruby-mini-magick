@@ -1,8 +1,0 @@
-/pkg
-coverage
-*.lock
-.idea
-.yardoc
-.rvmrc
-.gitignore
-.pc
