@@ -1,0 +1,138 @@
+--- !ruby/object:Gem::Specification
+name: mini_magick
+version: !ruby/object:Gem::Version
+  version: 3.6.0
+  prerelease: 
+platform: ruby
+authors:
+- Corey Johnson
+- Hampton Catlin
+- Peter Kieltyka
+autorequire: 
+bindir: bin
+cert_chain: []
+date: 2013-05-21 00:00:00.000000000 Z
+dependencies:
+- !ruby/object:Gem::Dependency
+  name: subexec
+  requirement: !ruby/object:Gem::Requirement
+    none: false
+    requirements:
+    - - ~>
+      - !ruby/object:Gem::Version
+        version: 0.2.1
+  type: :runtime
+  prerelease: false
+  version_requirements: !ruby/object:Gem::Requirement
+    none: false
+    requirements:
+    - - ~>
+      - !ruby/object:Gem::Version
+        version: 0.2.1
+- !ruby/object:Gem::Dependency
+  name: rake
+  requirement: !ruby/object:Gem::Requirement
+    none: false
+    requirements:
+    - - ! '>='
+      - !ruby/object:Gem::Version
+        version: '0'
+  type: :development
+  prerelease: false
+  version_requirements: !ruby/object:Gem::Requirement
+    none: false
+    requirements:
+    - - ! '>='
+      - !ruby/object:Gem::Version
+        version: '0'
+- !ruby/object:Gem::Dependency
+  name: test-unit
+  requirement: !ruby/object:Gem::Requirement
+    none: false
+    requirements:
+    - - ! '>='
+      - !ruby/object:Gem::Version
+        version: '0'
+  type: :development
+  prerelease: false
+  version_requirements: !ruby/object:Gem::Requirement
+    none: false
+    requirements:
+    - - ! '>='
+      - !ruby/object:Gem::Version
+        version: '0'
+description: ''
+email:
+- probablycorey@gmail.com
+- hcatlin@gmail.com
+- peter@nulayer.com
+executables: []
+extensions: []
+extra_rdoc_files: []
+files:
+- MIT-LICENSE
+- Rakefile
+- lib/mini_gmagick.rb
+- lib/mini_magick/version.rb
+- lib/mini_magick.rb
+- test/command_builder_test.rb
+- test/files/actually_a_gif.jpg
+- test/files/animation.gif
+- test/files/composited.jpg
+- test/files/erroneous.jpg
+- test/files/leaves (spaced).tiff
+- test/files/not_an_image.php
+- test/files/png.png
+- test/files/simple-minus.gif
+- test/files/simple.gif
+- test/files/special! "chars'.gif
+- test/files/trogdor.jpg
+- test/files/trogdor_capitalized.JPG
+- test/image_test.rb
+- test/leaves (spaced).tiff
+- test/test_helper.rb
+- test/trogdor_capitalized.JPG
+homepage: https://github.com/minimagick/minimagick
+licenses: []
+post_install_message: 
+rdoc_options: []
+require_paths:
+- lib
+required_ruby_version: !ruby/object:Gem::Requirement
+  none: false
+  requirements:
+  - - ! '>='
+    - !ruby/object:Gem::Version
+      version: '0'
+required_rubygems_version: !ruby/object:Gem::Requirement
+  none: false
+  requirements:
+  - - ! '>='
+    - !ruby/object:Gem::Version
+      version: '0'
+requirements:
+- You must have ImageMagick or GraphicsMagick installed
+rubyforge_project: 
+rubygems_version: 1.8.23
+signing_key: 
+specification_version: 3
+summary: Manipulate images with minimal use of memory via ImageMagick / GraphicsMagick
+test_files:
+- test/command_builder_test.rb
+- test/files/actually_a_gif.jpg
+- test/files/animation.gif
+- test/files/composited.jpg
+- test/files/erroneous.jpg
+- test/files/leaves (spaced).tiff
+- test/files/not_an_image.php
+- test/files/png.png
+- test/files/simple-minus.gif
+- test/files/simple.gif
+- test/files/special! "chars'.gif
+- test/files/trogdor.jpg
+- test/files/trogdor_capitalized.JPG
+- test/image_test.rb
+- test/leaves (spaced).tiff
+- test/test_helper.rb
+- test/trogdor_capitalized.JPG
+has_rdoc: 
