@@ -14,6 +14,11 @@ Add the gem to your Gemfile:
 gem "mini_magick"
 ```
 
+## Information
+
+* [Rdoc](http://rubydoc.info/github/minimagick/minimagick)
+
+
 ## Why?
 
 I was using RMagick and loving it, but it was eating up huge amounts
@@ -27,7 +32,7 @@ Using MiniMagick the ruby processes memory remains small (it spawns
 ImageMagick's command line program mogrify which takes up some memory
 as well, but is much smaller compared to RMagick)
 
-MiniMagick gives you access to all the commandline options ImageMagick
+MiniMagick gives you access to all the command line options ImageMagick
 has (Found here http://www.imagemagick.org/script/mogrify.php)
 
 
@@ -110,20 +115,20 @@ Want to composite (merge) two images?
 ```ruby
 first_image = MiniMagick::Image.open "first.jpg"
 second_image = MiniMagick::Image.open "second.jpg"
-first_image.composite(second_image) do |c|
+result = first_image.composite(second_image) do |c|
   c.compose "Over" # OverCompositeOp
   c.geometry "+20+20" # copy second_image onto first_image from (20, 20)
 end
-first_image.write "output.jpg"
+result.write "output.jpg"
 ```
 
 ## Thinking of switching from RMagick?
 
 Unlike [RMagick](http://rmagick.rubyforge.org), MiniMagick is a much thinner wrapper around ImageMagick.
 
-* To piece together MiniMagick commands is to refer to the [Mogrify Documentation](http://www.imagemagick.org/script/mogrify.php). For instance you can use the `-flop` option as `image.flop`.
+* To piece together MiniMagick commands refer to the [Mogrify Documentation](http://www.imagemagick.org/script/mogrify.php). For instance you can use the `-flop` option as `image.flop`.
 * Operations on a MiniMagick image tend to happen in-place as `image.trim`, whereas RMagick has both copying and in-place methods like `image.trim` and `image.trim!`.
-* Top open files with MiniMagick you use `MiniMagick::Image.open` as you would `Magick::Image.read`. To open a file and directly edit it, use `MiniMagick::Image.new`.
+* To open files with MiniMagick you use `MiniMagick::Image.open` as you would `Magick::Image.read`. To open a file and directly edit it, use `MiniMagick::Image.new`.
 
 ## Windows Users
 
