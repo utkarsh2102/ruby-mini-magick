@@ -1,3 +1,10 @@
+ruby-mini-magick (3.7.0-1) unstable; urgency=medium
+
+  * New upstream release
+  * ruby tests are moved from test/ to spec, refreshing patches
+
+ -- Markus Tornow <tornow@riseup.net>  Thu, 19 Dec 2013 02:46:19 +0000
+
 ruby-mini-magick (3.6.0+gh-1) unstable; urgency=low
 
   * New upstream release
