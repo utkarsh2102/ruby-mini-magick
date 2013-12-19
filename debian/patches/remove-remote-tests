@@ -2,7 +2,7 @@ Description: Remove tests that require internet connectivity.
 Author: Felix Geyer <fgeyer@debian.org>
 Bug-Debian: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%23706517+ 
 Forwarded: no
-Last-Update: 2013-05-09
+Last-Update: 2013-12-19
 ---
 This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 --- a/spec/lib/mini_magick/image_spec.rb
