@@ -1,5 +1,0 @@
-* patch debian/patches/remove-function-valid_version_installed solved by upstream
-* test/ folder renamed to spec/
-* patch debian/patches/remove-rubygems must be applied for spec/spec_helper.rb instead of test/
-* debian/changelog
-* renaming test/ to spec/ gives errors by dpkg-src:  modified binaries in spec/

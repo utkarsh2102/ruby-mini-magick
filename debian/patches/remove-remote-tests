@@ -5,24 +5,24 @@ Forwarded: no
 Last-Update: 2013-05-09
 ---
 This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
---- ruby-mini-magick-3.5.0.orig/test/image_test.rb
-+++ ruby-mini-magick-3.5.0/test/image_test.rb
-@@ -55,18 +55,6 @@ class ImageTest < Test::Unit::TestCase
-     image.destroy!
-   end
+--- a/spec/lib/mini_magick/image_spec.rb
++++ b/spec/lib/mini_magick/image_spec.rb
+@@ -57,18 +57,6 @@
+       end.to_not raise_error
+     end
  
--  def test_remote_image
--    image = Image.open("http://upload.wikimedia.org/wikipedia/en/b/bc/Wiki.png")
--    assert image.valid?
--    image.destroy!
--  end
+-    it 'loads remote image' do
+-      image = MiniMagick::Image.open("http://upload.wikimedia.org/wikipedia/en/b/bc/Wiki.png")
+-      image.valid?.should be true
+-      image.destroy!
+-    end
 -
--  def test_remote_image_with_complex_url
--    image = Image.open("http://a0.twimg.com/a/1296609216/images/fronts/logo_withbird_home.png?extra=foo&plus=bar")
--    assert image.valid?
--    image.destroy!
--  end
+-    it 'loads remote image with complex url' do
+-      image = MiniMagick::Image.open("http://a0.twimg.com/a/1296609216/images/fronts/logo_withbird_home.png?extra=foo&plus=bar")
+-      image.valid?.should be true
+-      image.destroy!
+-    end
 -
-   def test_reformat_with_capitalized_extension
-     image = Image.open(CAP_EXT_PATH)
-     image.format "jpg"
+     it 'reformats an image with a given extension' do
+       expect do
+         image = MiniMagick::Image.open(CAP_EXT_PATH)
