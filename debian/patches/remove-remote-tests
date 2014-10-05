@@ -5,24 +5,38 @@ Forwarded: no
 Last-Update: 2013-12-19
 ---
 This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
---- a/spec/lib/mini_magick/image_spec.rb
-+++ b/spec/lib/mini_magick/image_spec.rb
-@@ -57,18 +57,6 @@
-       end.to_not raise_error
+--- ruby-mini-magick-3.8.1.orig/spec/lib/mini_magick/image_spec.rb
++++ ruby-mini-magick-3.8.1/spec/lib/mini_magick/image_spec.rb
+@@ -130,19 +130,19 @@ describe MiniMagick::Image do
+       }.to_not raise_error
      end
  
 -    it 'loads remote image' do
--      image = MiniMagick::Image.open("http://upload.wikimedia.org/wikipedia/en/b/bc/Wiki.png")
--      image.valid?.should be true
+-      image = described_class.open('http://upload.wikimedia.org/wikipedia/en/b/bc/Wiki.png')
+-      expect(image).to be_valid
 -      image.destroy!
 -    end
 -
 -    it 'loads remote image with complex url' do
--      image = MiniMagick::Image.open("http://a0.twimg.com/a/1296609216/images/fronts/logo_withbird_home.png?extra=foo&plus=bar")
--      image.valid?.should be true
+-      image = described_class.open(
+-        'http://a0.twimg.com/a/1296609216/images/fronts/logo_withbird_home.png?extra=foo&plus=bar'
+-      )
+-      expect(image).to be_valid
 -      image.destroy!
 -    end
--
++#     it 'loads remote image' do
++#       image = described_class.open('http://upload.wikimedia.org/wikipedia/en/b/bc/Wiki.png')
++#       expect(image).to be_valid
++#       image.destroy!
++#     end
++# 
++#     it 'loads remote image with complex url' do
++#       image = described_class.open(
++#         'http://a0.twimg.com/a/1296609216/images/fronts/logo_withbird_home.png?extra=foo&plus=bar'
++#       )
++#       expect(image).to be_valid
++#       image.destroy!
++#     end
+ 
      it 'reformats an image with a given extension' do
-       expect do
-         image = MiniMagick::Image.open(CAP_EXT_PATH)
+       expect {
