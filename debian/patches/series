@@ -1,2 +1,3 @@
 remove-rubygems
 remove-remote-tests
+remove-unsuported-rspec-features

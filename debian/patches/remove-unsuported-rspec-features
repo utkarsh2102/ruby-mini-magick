@@ -1,0 +1,16 @@
+Description: Remove unsuported rspec features
+
+Author: David Suárez <david.sephirot@gmail.com>
+Last-Update: 2014-10-05
+
+--- ruby-mini-magick-3.8.1.orig/spec/spec_helper.rb
++++ ruby-mini-magick-3.8.1/spec/spec_helper.rb
+@@ -7,7 +7,7 @@ RSpec.configure do |config|
+   config.mock_framework = :mocha
+   config.color          = true
+   config.formatter      = 'documentation'
+-  config.raise_errors_for_deprecations!
++  #config.raise_errors_for_deprecations!
+ end
+ 
+ # Image files from testunit port to RSpec
