@@ -1,9 +1,9 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: mini_magick
-Source: https://github.com/minimagick/minimagick 
+Source: https://github.com/minimagick/minimagick
 
 Files: *
-Copyright: 2005 Corey Johnson <probablycorey@gmail.com> 
+Copyright: 2005 Corey Johnson <probablycorey@gmail.com>
 License: Expat
 
 Files: debian/*
@@ -31,4 +31,3 @@ License: Expat
  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  OTHER DEALINGS IN THE SOFTWARE.
-	

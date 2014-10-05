@@ -3,7 +3,14 @@ Section: ruby
 Priority: optional
 Maintainer: Debian Ruby Extras Maintainers <pkg-ruby-extras-maintainers@lists.alioth.debian.org>
 Uploaders: Markus Tornow <tornow@riseup.net>
-Build-Depends: debhelper (>= 7.0.50~), gem2deb (>= 0.3.0~), imagemagick (>= 8:6.6.3~), rake, ruby-subexec, ruby-mocha, ruby-rspec, graphicsmagick
+Build-Depends: debhelper (>= 7.0.50~),
+               gem2deb (>= 0.3.0~),
+               graphicsmagick,
+               imagemagick (>= 8:6.6.3~),
+               rake,
+               ruby-mocha,
+               ruby-rspec,
+               ruby-subexec
 Standards-Version: 3.9.5
 Vcs-Git: git://anonscm.debian.org/pkg-ruby-extras/ruby-mini-magick.git
 Vcs-Browser: http://anonscm.debian.org/gitweb?p=pkg-ruby-extras/ruby-mini-magick.git;a=summary
@@ -13,9 +20,13 @@ XS-Ruby-Versions: all
 Package: ruby-mini-magick
 Architecture: all
 XB-Ruby-Versions: ${ruby:Versions}
-Depends: ${shlibs:Depends}, ${misc:Depends}, ruby | ruby-interpreter, imagemagick (>= 6.6.3~) | graphicsmagick, ruby-subexec
+Depends: imagemagick (>= 6.6.3~) | graphicsmagick,
+         ruby | ruby-interpreter,
+         ruby-subexec,
+         ${misc:Depends},
+         ${shlibs:Depends}
 Description: wrapper for ImageMagick with a small memory footprint
  MiniMagick is a Ruby library providing a wrapper around
  ImageMagick or GraphicsMagick, allowing manipulation of images with
  minimal use of memory. MiniMagick gives access to all the commandline
- options provided by ImageMagick. 
+ options provided by ImageMagick.
