@@ -13,3 +13,8 @@
 
 %:
 	dh $@ --buildsystem=ruby --with ruby
+
+override_dh_auto_install:
+	dh_auto_install
+	# remove rspec binary
+	rm -Rf debian/ruby-mini-magick/usr/bin
