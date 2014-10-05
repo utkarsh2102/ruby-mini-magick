@@ -1,3 +1,20 @@
+ruby-mini-magick (3.8.1-1) unstable; urgency=medium
+
+  * Team upload.
+
+  [ David Suárez ]
+  * New upstream version.
+  * Debian patches:
+    - Refresh 'remove-remote-tests' patch.
+    - Add 'remove-unsuported-rspec-features' patch.
+    - Add 'remove-erroneous-image-test' patch. (Closes: #761532)
+      Imagemagick identify command, now seems to return a fail status
+      if the image is not correct.
+  * debian/rules: remove rspec installed binary.
+  * debian/control: add graphicsmagick as build depend; needed for tests.
+
+ -- David Suárez <david.sephirot@gmail.com>  Sun, 05 Oct 2014 19:10:35 +0200
+
 ruby-mini-magick (3.7.0-1) unstable; urgency=medium
 
   * New upstream release
