@@ -1,4 +1,4 @@
-ruby-mini-magick (4.0.1-1) UNRELEASED; urgency=medium
+ruby-mini-magick (4.0.1-1) experimental; urgency=medium
 
   * Team upload..
   * New upstream release.
@@ -7,7 +7,7 @@ ruby-mini-magick (4.0.1-1) UNRELEASED; urgency=medium
   * Add pry as build dependency.
   * Disable tests (need rspec 3).
 
- -- Pirate Praveen <praveen@debian.org>  Sun, 30 Nov 2014 03:08:46 +0530
+ -- Pirate Praveen <praveen@debian.org>  Sun, 30 Nov 2014 03:46:24 +0530
 
 ruby-mini-magick (3.8.1-1) unstable; urgency=medium
 
