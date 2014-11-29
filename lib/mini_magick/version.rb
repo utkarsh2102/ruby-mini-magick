@@ -1,14 +1,14 @@
 module MiniMagick
   ##
-  # Returns the version of the currently loaded MiniMagick as
-  # a <tt>Gem::Version</tt>.
+  # @return [Gem::Version]
+  #
   def self.version
     Gem::Version.new VERSION::STRING
   end
 
   module VERSION
-    MAJOR = 3
-    MINOR = 8
+    MAJOR = 4
+    MINOR = 0
     TINY  = 1
     PRE   = nil
 
