@@ -1,75 +1,53 @@
-require 'mini_magick/command_builder'
-require 'mini_magick/errors'
+require 'mini_magick/configuration'
+require 'mini_magick/tool'
 require 'mini_magick/image'
-require 'mini_magick/utilities'
 
 module MiniMagick
-  @validate_on_create = true
-  @validate_on_write = true
 
-  class << self
-    attr_accessor :processor
-    attr_accessor :processor_path
-    attr_accessor :timeout
-    attr_accessor :debug
-    attr_accessor :validate_on_create
-    attr_accessor :validate_on_write
+  extend MiniMagick::Configuration
 
-    ##
-    # Tries to detect the current processor based if any of the processors
-    # exist. Mogrify have precedence over gm by default.
-    #
-    # === Returns
-    # * [Symbol] The detected procesor
-    def processor
-      @processor ||= [:mogrify, :gm].detect do |processor|
-        MiniMagick::Utilities.which(processor.to_s)
-      end
-    end
-
-    ##
-    # Discovers the imagemagick version based on mogrify's output.
-    #
-    # === Returns
-    # * The imagemagick version
-    def image_magick_version
-      @@version ||= Gem::Version.create(`mogrify --version`.split(' ')[2].split('-').first)
-    end
-
-    ##
-    # The minimum allowed imagemagick version
-    #
-    # === Returns
-    # * The minimum imagemagick version
-    def minimum_image_magick_version
-      @@minimum_version ||= Gem::Version.create('6.6.3')
-    end
-
-    ##
-    # Checks whether the imagemagick's version is valid
-    #
-    # === Returns
-    # * [Boolean]
-    def valid_version_installed?
-      image_magick_version >= minimum_image_magick_version
-    end
-
-    ##
-    # Checks whether the current processory is mogrify.
-    #
-    # === Returns
-    # * [Boolean]
-    def mogrify?
-      processor && processor.to_sym == :mogrify
-    end
-
-    ##
-    # Checks whether the current processor is graphicsmagick.
-    #
-    # === Returns
-    # * [Boolean]
-    def gm?
-      processor && processor.to_sym == :gm
-    end
+  ##
+  # You might want to execute only certain blocks of processing with a
+  # different CLI, because for example that CLI does that particular thing
+  # faster. After the block CLI resets to its previous value.
+  #
+  # @example
+  #   MiniMagick.with_cli :graphicsmagick do
+  #     # operations that are better done with GraphicsMagick
+  #   end
+  def self.with_cli(cli)
+    old_cli = self.cli
+    self.cli = cli
+    yield
+    self.cli = old_cli
   end
+
+  ##
+  # Checks whether the CLI used is ImageMagick.
+  #
+  # @return [Boolean]
+  def self.imagemagick?
+    cli == :imagemagick
+  end
+
+  ##
+  # Checks whether the CLI used is GraphicsMagick.
+  #
+  # @return [Boolean]
+  def self.graphicsmagick?
+    cli == :graphicsmagick
+  end
+
+  ##
+  # Returns ImageMagick's/GraphicsMagick's version.
+  #
+  # @return [String]
+  def self.cli_version
+    output = MiniMagick::Tool::Identify.new(&:version)
+    output[/\d+\.\d+\.\d+(-\d+)?/]
+  end
+
+  class Error < RuntimeError; end
+  class Invalid < StandardError; end
+
 end

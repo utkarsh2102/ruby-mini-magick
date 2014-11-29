@@ -1,188 +1,178 @@
 require 'tempfile'
-require 'subexec'
 require 'stringio'
 require 'pathname'
+require 'uri'
+require 'open-uri'
+
+require 'mini_magick/image/info'
+require 'mini_magick/utilities'
 
 module MiniMagick
   class Image
-    # @return [String] The location of the current working file
-    attr_writer :path
 
-    def path
-      run_queue if @command_queued
-      MiniMagick::Utilities.path(@path)
+    ##
+    # This is the primary loading method used by all of the other class
+    # methods.
+    #
+    # Use this to pass in a stream object. Must respond to #read(size) or be a
+    # binary string object (BLOBBBB)
+    #
+    # Probably easier to use the {.open} method if you want to open a file or a
+    # URL.
+    #
+    # @param stream [#read, String] Some kind of stream object that needs
+    #   to be read or is a binary String blob
+    # @param ext [String] A manual extension to use for reading the file. Not
+    #   required, but if you are having issues, give this a try.
+    # @return [MiniMagick::Image]
+    #
+    def self.read(stream, ext = nil)
+      if stream.is_a?(String)
+        stream = StringIO.new(stream)
+      end
+
+      create(ext) { |file| IO.copy_stream(stream, file) }
     end
 
-    # Class Methods
-    # -------------
-    class << self
-      # This is the primary loading method used by all of the other class
-      # methods.
-      #
-      # Use this to pass in a stream object. Must respond to Object#read(size)
-      # or be a binary string object (BLOBBBB)
-      #
-      # As a change from the old API, please try and use IOStream objects. They
-      # are much, much better and more efficient!
-      #
-      # Probably easier to use the #open method if you want to open a file or a
-      # URL.
-      #
-      # @param stream [IOStream, String] Some kind of stream object that needs
-      #   to be read or is a binary String blob!
-      # @param ext [String] A manual extension to use for reading the file. Not
-      #   required, but if you are having issues, give this a try.
-      # @return [Image]
-      def read(stream, ext = nil)
-        if stream.is_a?(String)
-          stream = StringIO.new(stream)
-        elsif stream.is_a?(StringIO)
-          # Do nothing, we want a StringIO-object
-        elsif stream.respond_to? :path
-          if File.respond_to?(:binread)
-            stream = StringIO.new File.binread(stream.path.to_s)
-          else
-            stream = StringIO.new File.open(stream.path.to_s, 'rb') { |f| f.read }
-          end
-        end
-
-        create(ext) do |f|
-          while chunk = stream.read(8192)
-            f.write(chunk)
-          end
-        end
-      end
-
-      # @deprecated Please use Image.read instead!
-      def from_blob(blob, ext = nil)
-        warn 'Warning: MiniMagick::Image.from_blob method is deprecated. Instead, please use Image.read'
-        create(ext) { |f| f.write(blob) }
-      end
-
-      # Creates an image object from a binary string blob which contains raw
-      # pixel data (i.e. no header data).
-      #
-      # @param blob [String] Binary string blob containing raw pixel data.
-      # @param columns [Integer] Number of columns.
-      # @param rows [Integer] Number of rows.
-      # @param depth [Integer] Bit depth of the encoded pixel data.
-      # @param map [String] A code for the mapping of the pixel data. Example:
-      #   'gray' or 'rgb'.
-      # @param format [String] The file extension of the image format to be
-      #   used when creating the image object.
-      # Defaults to 'png'.
-      # @return [Image] The loaded image.
-      #
-      def import_pixels(blob, columns, rows, depth, map, format = 'png')
-        # Create an image object with the raw pixel data string:
-        image = create('.dat', false) { |f| f.write(blob) }
+    ##
+    # Creates an image object from a binary string blob which contains raw
+    # pixel data (i.e. no header data).
+    #
+    # @param blob [String] Binary string blob containing raw pixel data.
+    # @param columns [Integer] Number of columns.
+    # @param rows [Integer] Number of rows.
+    # @param depth [Integer] Bit depth of the encoded pixel data.
+    # @param map [String] A code for the mapping of the pixel data. Example:
+    #   'gray' or 'rgb'.
+    # @param format [String] The file extension of the image format to be
+    #   used when creating the image object.
+    # Defaults to 'png'.
+    # @return [MiniMagick::Image] The loaded image.
+    #
+    def self.import_pixels(blob, columns, rows, depth, map, format = 'png')
+      # Create an image object with the raw pixel data string:
+      create(".dat", false) { |f| f.write(blob) }.tap do |image|
+        output_path = image.path.sub(/\.\w+$/, ".#{format}")
         # Use ImageMagick to convert the raw data file to an image file of the
         # desired format:
-        converted_image_path = image.path[0..-4] + format
-        arguments = ['-size', "#{columns}x#{rows}", '-depth', "#{depth}", "#{map}:#{image.path}", "#{converted_image_path}"]
-        # Example: convert -size 256x256 -depth 16 gray:blob.dat blob.png
-        cmd = CommandBuilder.new('convert', *arguments)
-        image.run(cmd)
-        # Update the image instance with the path of the properly formatted
-        # image, and return:
-        image.path = converted_image_path
-        image
-      end
+        MiniMagick::Tool::Convert.new do |convert|
+          convert.size "#{columns}x#{rows}"
+          convert.depth depth
+          convert << "#{map}:#{image.path}"
+          convert << output_path
+        end
 
-      # Opens a specific image file either on the local file system or at a URI.
-      #
-      # Use this if you don't want to overwrite the image file.
-      #
-      # Extension is either guessed from the path or you can specify it as a
-      # second parameter.
-      #
-      # If you pass in what looks like a URL, we require 'open-uri' before
-      # opening it.
-      #
-      # @param file_or_url [String] Either a local file path or a URL that
-      #   open-uri can read
-      # @param ext [String] Specify the extension you want to read it as
-      # @return [Image] The loaded image
-      def open(file_or_url, ext = nil)
-        file_or_url = file_or_url.to_s # Force String... Hell or high water
-        if file_or_url.include?('://')
-          require 'open-uri'
-          ext ||= File.extname(URI.parse(file_or_url).path)
-          Kernel.open(file_or_url) do |f|
-            read(f, ext)
-          end
+        image.path.replace output_path
+      end
+    end
+
+    ##
+    # Opens a specific image file either on the local file system or at a URI.
+    # Use this if you don't want to overwrite the image file.
+    #
+    # Extension is either guessed from the path or you can specify it as a
+    # second parameter.
+    #
+    # @param path_or_url [String] Either a local file path or a URL that
+    #   open-uri can read
+    # @param ext [String] Specify the extension you want to read it as
+    # @return [MiniMagick::Image] The loaded image
+    #
+    def self.open(path_or_url, ext = nil)
+      ext ||=
+        if path_or_url.to_s =~ URI.regexp
+          File.extname(URI(path_or_url).path)
         else
-          ext ||= File.extname(file_or_url)
-          File.open(file_or_url, 'rb') do |f|
-            read(f, ext)
-          end
+          File.extname(path_or_url)
+        end
+
+      Kernel.open(path_or_url, "rb") do |file|
+        read(file, ext)
+      end
+    end
+
+    ##
+    # Used to create a new Image object data-copy. Not used to "paint" or
+    # that kind of thing.
+    #
+    # Takes an extension in a block and can be used to build a new Image
+    # object. Used by both {.open} and {.read} to create a new object. Ensures
+    # we have a good tempfile.
+    #
+    # @param ext [String] Specify the extension you want to read it as
+    # @param validate [Boolean] If false, skips validation of the created
+    #   image. Defaults to true.
+    # @yield [Tempfile] You can #write bits to this object to create the new
+    #   Image
+    # @return [MiniMagick::Image] The created image
+    #
+    def self.create(ext = nil, validate = MiniMagick.validate_on_create, &block)
+      tempfile = MiniMagick::Utilities.tempfile(ext.to_s.downcase, &block)
+
+      new(tempfile.path, tempfile).tap do |image|
+        image.validate! if validate
+      end
+    end
+
+    ##
+    # @private
+    # @!macro [attach] attribute
+    #   @!attribute [r] $1
+    #
+    def self.attribute(name, key = name.to_s)
+      define_method(name) do |*args|
+        if args.any? && MiniMagick::Tool::Mogrify.instance_methods.include?(name)
+          mogrify { |b| b.send(name, *args) }
+        else
+          @info[key, *args]
         end
       end
-
-      # @deprecated Please use MiniMagick::Image.open(file_or_url) now
-      def from_file(file, ext = nil)
-        warn 'Warning: MiniMagick::Image.from_file is now deprecated. Please use Image.open'
-        open(file, ext)
-      end
-
-      # Used to create a new Image object data-copy. Not used to "paint" or
-      # that kind of thing.
-      #
-      # Takes an extension in a block and can be used to build a new Image
-      # object. Used by both #open and #read to create a new object! Ensures we
-      # have a good tempfile!
-      #
-      # @param ext [String] Specify the extension you want to read it as
-      # @param validate [Boolean] If false, skips validation of the created
-      #   image. Defaults to true.
-      # @yield [IOStream] You can #write bits to this object to create the new
-      #   Image
-      # @return [Image] The created image
-      def create(ext = nil, validate = MiniMagick.validate_on_create, &block)
-        tempfile = Tempfile.new(['mini_magick', ext.to_s.downcase])
-        tempfile.binmode
-        block.call(tempfile)
-        tempfile.close
-
-        image = new(tempfile.path, tempfile)
-
-        fail MiniMagick::Invalid if validate && !image.valid?
-        return image
-      ensure
-        tempfile.close if tempfile
-      end
     end
 
-    # Create a new MiniMagick::Image object
+    ##
+    # @return [String] The location of the current working file
+    #
+    attr_reader :path
+
+    ##
+    # Create a new {MiniMagick::Image} object.
     #
     # _DANGER_: The file location passed in here is the *working copy*. That
-    # is, it gets *modified*. you can either copy it yourself or use the
-    # MiniMagick::Image.open(path) method which creates a temporary file for
-    # you and protects your original!
+    # is, it gets *modified*. You can either copy it yourself or use {.open}
+    # which creates a temporary file for you and protects your original.
     #
     # @param input_path [String] The location of an image file
-    # @todo Allow this to accept a block that can pass off to
-    #   Image#combine_options
-    def initialize(input_path, tempfile = nil)
+    # @yield [MiniMagick::Tool::Mogrify] If block is given, {#combine_options}
+    #   is called.
+    #
+    def initialize(input_path, tempfile = nil, &block)
       @path = input_path
       @tempfile = tempfile
-      @info = {}
-      reset_queue
+      @info = MiniMagick::Image::Info.new(@path)
+
+      combine_options(&block) if block
     end
 
-    def reset_queue
-      @command_queued = false
-      @queue = MiniMagick::CommandBuilder.new('mogrify')
-      @info.clear
+    def eql?(other)
+      self.class.equal?(other.class) &&
+        signature == other.signature
+    end
+    alias == eql?
+
+    def hash
+      signature.hash
     end
 
-    def run_queue
-      return nil unless @command_queued
-      @queue << MiniMagick::Utilities.path(@path)
-      run(@queue)
-      reset_queue
+    ##
+    # Returns raw image data.
+    #
+    # @return [String] Binary string
+    #
+    def to_blob
+      File.binread(path)
     end
 
+    ##
     # Checks to make sure that MiniMagick can read the file and understand it.
     #
     # This uses the 'identify' command line utility to check the file. If you
@@ -190,89 +180,122 @@ module MiniMagick
     # 'identify' command and see if you can figure out what the issue is.
     #
     # @return [Boolean]
+    #
     def valid?
-      run_command('identify', path)
+      validate!
       true
     rescue MiniMagick::Invalid
       false
     end
 
-    def info(key)
-      run_queue if @command_queued
-
-      @info[key]
+    ##
+    # Runs `identify` on the current image, and raises an error if it doesn't
+    # pass.
+    #
+    # @raise [MiniMagick::Invalid]
+    #
+    def validate!
+      identify
+    rescue MiniMagick::Error => error
+      raise MiniMagick::Invalid, error.message
     end
 
-    # A rather low-level way to interact with the "identify" command. No nice
-    # API here, just the crazy stuff you find in ImageMagick. See the examples
-    # listed!
+    ##
+    # Returns the image format (e.g. "JPEG", "GIF").
+    #
+    # @return [String]
+    #
+    attribute :type, "format"
+    ##
+    # @return [String]
+    #
+    attribute :mime_type
+    ##
+    # @return [Integer]
+    #
+    attribute :width
+    ##
+    # @return [Integer]
+    #
+    attribute :height
+    ##
+    # @return [Array<Integer>]
+    #
+    attribute :dimensions
+    ##
+    # Returns the file size of the image.
+    #
+    # @return [Integer]
+    #
+    attribute :size
+    ##
+    # @return [String]
+    #
+    attribute :colorspace
+    ##
+    # @return [Hash]
+    #
+    attribute :exif
+    ##
+    # Returns the resolution of the photo. You can optionally specify the
+    # units measurement.
     #
     # @example
-    #    image["format"]      #=> "TIFF"
-    #    image["height"]      #=> 41 (pixels)
-    #    image["width"]       #=> 50 (pixels)
-    #    image["colorspace"]  #=> "DirectClassRGB"
-    #    image["dimensions"]  #=> [50, 41]
-    #    image["size"]        #=> 2050 (bits)
-    #    image["original_at"] #=> 2005-02-23 23:17:24 +0000 (Read from Exif data)
-    #    image["EXIF:ExifVersion"] #=> "0220" (Can read anything from Exif)
+    #   image.resolution("PixelsPerInch") #=> [250, 250]
+    # @see http://www.imagemagick.org/script/command-line-options.php#units
+    # @return [Array<Integer>]
     #
-    # @param format [String] A format for the "identify" command
-    # @see http://www.imagemagick.org/script/command-line-options.php#format
-    # @return [String, Numeric, Array, Time, Object] Depends on the method
-    #   called! Defaults to String for unknown commands
+    attribute :resolution
+    ##
+    # Returns the message digest of this image as a SHA-256, hexidecimal
+    # encoded string. This signature uniquely identifies the image and is
+    # convenient for determining if an image has been modified or whether two
+    # images are identical.
+    #
+    # @example
+    #   image.signature #=> "60a7848c4ca6e36b8e2c5dea632ecdc29e9637791d2c59ebf7a54c0c6a74ef7e"
+    # @see http://www.imagemagick.org/api/signature.php
+    # @return [String]
+    #
+    attribute :signature
+
+    ##
+    # Use this method if you want to access raw Identify's format API.
+    #
+    # @example
+    #    image["%w %h"]       #=> "250 450"
+    #    image["%r"]          #=> "DirectClass sRGB"
+    #
+    # @param value [String]
+    # @see http://www.imagemagick.org/script/escape.php
+    # @return [String]
+    #
     def [](value)
-      retrieved = info(value)
-      return retrieved unless retrieved.nil?
-
-      # Why do I go to the trouble of putting in newlines? Because otherwise
-      # animated gifs screw everything up
-      retrieved = case value.to_s
-                  when 'colorspace'
-                    run_command('identify', '-format', '%r\n', path).split("\n")[0].strip
-                  when 'format'
-                    run_command('identify', '-format', '%m\n', path).split("\n")[0]
-                  when 'dimensions', 'width', 'height'
-                    width_height = run_command(
-                      'identify', '-format', MiniMagick::Utilities.windows? ? '"%w %h\n"' : '%w %h\n', path
-                    ).split("\n")[0].split.map { |v| v.to_i }
-
-                    @info[:width] = width_height[0]
-                    @info[:height] = width_height[1]
-                    @info[:dimensions] = width_height
-                    @info[value.to_sym]
-                  when 'size'
-                    File.size(path) # Do this because calling identify -format "%b" on an animated gif fails!
-                  when 'original_at'
-                    # Get the EXIF original capture as a Time object
-                    Time.local(*self['EXIF:DateTimeOriginal'].split(/:|\s+/)) rescue nil
-                  when /^EXIF\:/i
-                    result = run_command('identify', '-format', "%[#{value}]", path).chomp
-                    if result.include?(',')
-                      read_character_data(result)
-                    else
-                      result
-                    end
-                  else
-                    run_command('identify', '-format', value, path).split("\n")[0]
-                  end
-
-      @info[value] = retrieved unless retrieved.nil?
-      @info[value]
+      @info[value.to_s]
     end
+    alias info []
 
-    # Sends raw commands to imagemagick's `mogrify` command. The image path is
-    # automatically appended to the command.
+    ##
+    # Returns layers of the image. For example, JPEGs are 1-layered, but
+    # formats like PSDs, GIFs and PDFs can have multiple layers/frames/pages.
     #
-    # Remember, we are always acting on this instance of the Image when messing
-    # with this.
+    # @example
+    #   image = MiniMagick::Image.new("document.pdf")
+    #   image.pages.each_with_index do |page, idx|
+    #     page.write("page#{idx}.pdf")
+    #   end
+    # @return [Array<MiniMagick::Image>]
     #
-    # @return [String] Whatever the result from the command line is. May not be
-    #   terribly useful.
-    def <<(*args)
-      run_command('mogrify', *args << path)
+    def layers
+      layers_count = identify.lines.count
+      layers_count.times.map do |idx|
+        MiniMagick::Image.new("#{path}[#{idx}]")
+      end
     end
+    alias pages layers
+    alias frames layers
 
+    ##
     # This is used to change the format of the image. That is, from "tiff to
     # jpg" or something like that. Once you run it, the instance is pointing to
     # a new file with a new extension!
@@ -293,87 +316,39 @@ module MiniMagick
     # @param page [Integer] If this is an animated gif, say which 'page' you
     #   want with an integer. Default 0 will convert only the first page; 'nil'
     #   will convert all pages.
-    # @return [nil]
+    # @yield [MiniMagick::Tool::Convert] It optionally yields the command,
+    #   if you want to add something.
+    # @return [self]
+    #
     def format(format, page = 0)
-      run_queue if @command_queued
+      @info.clear
 
-      c = CommandBuilder.new('mogrify', '-format', format)
-      yield c if block_given?
-      c <<  (page ? "#{path}[#{page}]" : path)
-      run(c)
-
-      old_path = path
-
-      self.path = path.sub(/(\.\w*)?$/, (page ? ".#{format}" : "-0.#{format}"))
-
-      File.delete(old_path) if old_path != path
-
-      unless File.exist?(path)
-        fail MiniMagick::Error, "Unable to format to #{format}"
+      if @tempfile
+        new_tempfile = MiniMagick::Utilities.tempfile(".#{format}")
+        new_path = new_tempfile.path
+      else
+        new_path = path.sub(/\.\w+$/, ".#{format}")
       end
-    end
 
-    # Collapse images with sequences to the first frame (i.e. animated gifs) and
-    # preserve quality
-    def collapse!
-      run_command('mogrify', '-quality', '100', "#{path}[0]")
-    end
-
-    # Writes the temporary file out to either a file location (by passing in a
-    # String) or by passing in a Stream that you can #write(chunk) to
-    # repeatedly
-    #
-    # @param output_to [IOStream, String] Some kind of stream object that needs
-    #   to be read or a file path as a String
-    # @return [IOStream, Boolean] If you pass in a file location [String] then
-    #   you get a success boolean. If its a stream, you get it back.
-    def write(output_to)
-      run_queue if @command_queued
-
-      if output_to.kind_of?(String) || output_to.kind_of?(Pathname) || !output_to.respond_to?(:write)
-        FileUtils.copy_file path, output_to
-        if MiniMagick.validate_on_write
-          run_command(
-            'identify', MiniMagick::Utilities.path(output_to.to_s)
-          ) # Verify that we have a good image
-        end
-      else # stream
-        File.open(path, 'rb') do |f|
-          f.binmode
-          while chunk = f.read(8192)
-            output_to.write(chunk)
-          end
-        end
-        output_to
+      MiniMagick::Tool::Convert.new do |convert|
+        convert << (page ? "#{path}[#{page}]" : path)
+        yield convert if block_given?
+        convert << new_path
       end
+
+      if @tempfile
+        @tempfile.unlink
+        @tempfile = new_tempfile
+      else
+        File.delete(path) unless path == new_path
+      end
+
+      path.replace new_path
+
+      self
     end
 
-    # Gives you raw image data back
-    # @return [String] binary string
-    def to_blob
-      run_queue if @command_queued
-
-      f = File.new path
-      f.binmode
-      f.read
-    ensure
-      f.close if f
-    end
-
-    def mime_type
-      format = self[:format]
-      'image/' + format.to_s.downcase
-    end
-
-    # If an unknown method is called then it is sent through the mogrify
-    # program.
-    #
-    # @see http://www.imagemagick.org/script/mogrify.php
-    def method_missing(symbol, *args)
-      @queue.send(symbol, *args)
-      @command_queued = true
-    end
-
+    ##
     # You can use multiple commands together using this method. Very easy to
     # use!
     #
@@ -381,81 +356,156 @@ module MiniMagick
     #   image.combine_options do |c|
     #     c.draw "image Over 0,0 10,10 '#{MINUS_IMAGE_PATH}'"
     #     c.thumbnail "300x500>"
-    #     c.background background
+    #     c.background "blue"
     #   end
     #
-    # @yieldparam command [CommandBuilder]
-    def combine_options
-      if block_given?
-        yield @queue
-        @command_queued = true
-      end
+    # @yield [MiniMagick::Tool::Mogrify]
+    # @see http://www.imagemagick.org/script/mogrify.php
+    # @return [self]
+    #
+    def combine_options(&block)
+      mogrify(&block)
     end
 
-    def composite(other_image, output_extension = 'jpg', mask = nil, &block)
-      run_queue if @command_queued
-      begin
-        second_tempfile = Tempfile.new(output_extension)
-        second_tempfile.binmode
-      ensure
-        second_tempfile.close
-      end
-
-      command = CommandBuilder.new('composite')
-      block.call(command) if block
-      command.push(other_image.path)
-      command.push(path)
-      command.push(mask.path) unless mask.nil?
-      command.push(second_tempfile.path)
-
-      run(command)
-      Image.new(second_tempfile.path, second_tempfile)
-    end
-
-    def run_command(command, *args)
-      run_queue if @command_queued
-
-      if command == 'identify'
-        args.unshift '-ping'  # -ping "efficiently determine image characteristics."
-        args.unshift '-quiet' if MiniMagick.mogrify? && !MiniMagick.debug # graphicsmagick has no -quiet option.
-      end
-
-      run(CommandBuilder.new(command, *args))
-    end
-
-    def run(command_builder)
-      command = command_builder.command
-
-      sub = Subexec.run(command, :timeout => MiniMagick.timeout)
-
-      if sub.exitstatus != 0
-        # Clean up after ourselves in case of an error
-        destroy!
-
-        # Raise the appropriate error
-        if sub.output =~ /no decode delegate/i || sub.output =~ /did not return an image/i
-          fail Invalid, sub.output
+    ##
+    # If an unknown method is called then it is sent through the mogrify
+    # program.
+    #
+    # @see http://www.imagemagick.org/script/mogrify.php
+    # @return [self]
+    #
+    def method_missing(name, *args)
+      mogrify do |builder|
+        if builder.respond_to?(name)
+          builder.send(name, *args)
         else
-          # TODO: should we do something different if the command times out ...?
-          # its definitely better for logging.. Otherwise we don't really know
-          fail Error, "Command (#{command.inspect.gsub("\\", "")}) failed: #{{ :status_code => sub.exitstatus, :output => sub.output }.inspect}"
+          super
+        end
+      end
+    end
+
+    def respond_to_missing?(method_name, include_private = false)
+      MiniMagick::Tool::Mogrify.new.respond_to?(method_name, include_private)
+    end
+
+    ##
+    # Writes the temporary file out to either a file location (by passing in a
+    # String) or by passing in a Stream that you can #write(chunk) to
+    # repeatedly
+    #
+    # @param output_to [String, Pathname, #read] Some kind of stream object
+    #   that needs to be read or a file path as a String
+    #
+    def write(output_to)
+      case output_to
+      when String, Pathname
+        if layer?
+          MiniMagick::Tool::Convert.new do |builder|
+            builder << path
+            builder << output_to
+          end
+        else
+          FileUtils.copy_file path, output_to
         end
       else
-        sub.output
+        IO.copy_stream File.open(path, "rb"), output_to
       end
     end
 
+    ##
+    # @example
+    #  first_image = MiniMagick::Image.open "first.jpg"
+    #  second_image = MiniMagick::Image.open "second.jpg"
+    #  result = first_image.composite(second_image) do |c|
+    #    c.compose "Over" # OverCompositeOp
+    #    c.geometry "+20+20" # copy second_image onto first_image from (20, 20)
+    #  end
+    #  result.write "output.jpg"
+    #
+    # @see http://www.imagemagick.org/script/composite.php
+    #
+    def composite(other_image, output_extension = 'jpg', mask = nil)
+      output_tempfile = MiniMagick::Utilities.tempfile(".#{output_extension}")
+
+      MiniMagick::Tool::Composite.new do |composite|
+        yield composite if block_given?
+        composite << other_image.path
+        composite << path
+        composite << mask.path if mask
+        composite << output_tempfile.path
+      end
+
+      Image.new(output_tempfile.path, output_tempfile)
+    end
+
+    ##
+    # Collapse images with sequences to the first frame (i.e. animated gifs) and
+    # preserve quality.
+    #
+    # @param frame [Integer] The frame to which to collapse to, defaults to `0`.
+    # @return [self]
+    #
+    def collapse!(frame = 0)
+      mogrify(frame) { |builder| builder.quality(100) }
+    end
+
+    ##
+    # Destroys the tempfile (created by {.open}) if it exists.
+    #
     def destroy!
-      return if @tempfile.nil?
-      File.unlink(@path) if File.exist?(@path)
-      @tempfile = nil
+      @tempfile.unlink if @tempfile
+    end
+
+    ##
+    # Runs `identify` on itself. Accepts an optional block for adding more
+    # options to `identify`.
+    #
+    # @example
+    #   image = MiniMagick::Image.open("image.jpg")
+    #   image.identify do |b|
+    #     b.verbose
+    #   end # runs `identify -verbose image.jpg`
+    # @return [String] Output from `identify`
+    # @yield [MiniMagick::Tool::Identify]
+    #
+    def identify
+      MiniMagick::Tool::Identify.new do |builder|
+        yield builder if block_given?
+        builder << path
+      end
+    end
+
+    # @private
+    def run_command(tool_name, *args)
+      MiniMagick::Tool.const_get(tool_name.capitalize).new do |builder|
+        args.each do |arg|
+          builder << arg
+        end
+      end
     end
 
     private
 
-    # Sometimes we get back a list of character values
-    def read_character_data(string)
-      string.scan(/\d+/).map(&:to_i).map(&:chr).join
+    def mogrify(page = nil)
+      @info.clear
+
+      MiniMagick::Tool::Mogrify.new do |builder|
+        builder.instance_eval do
+          def format(*)
+            fail NoMethodError,
+              "you must call #format on a MiniMagick::Image directly"
+          end
+        end
+        yield builder if block_given?
+        builder << (page ? "#{path}[#{page}]" : path)
+      end
+
+      self
     end
+
+    def layer?
+      path =~ /\[\d+\]$/
+    end
+
   end
 end
