@@ -3,7 +3,8 @@ ruby-mini-magick (4.0.1-1) UNRELEASED; urgency=medium
   * Team upload..
   * New upstream release.
   * Refresh patches.
-  * Remove remove-unsuported-rspec-features (not needed).
+  * Remove patches remove-unsuported-rspec-features,
+    remove-erroneous-image-test (not needed).
 
  -- Pirate Praveen <praveen@debian.org>  Sun, 30 Nov 2014 03:08:46 +0530
 
