@@ -5,6 +5,7 @@ ruby-mini-magick (4.0.1-1) UNRELEASED; urgency=medium
   * Refresh patches.
   * Remove patche remove-erroneous-image-test (not needed).
   * Add pry as build dependency.
+  * Disable tests (need rspec 3).
 
  -- Pirate Praveen <praveen@debian.org>  Sun, 30 Nov 2014 03:08:46 +0530
 
