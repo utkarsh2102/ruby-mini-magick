@@ -1,3 +1,10 @@
+ruby-mini-magick (4.2.0-1) UNRELEASED; urgency=medium
+
+  * Team upload.
+  * New upstream release.
+
+ -- Pirate Praveen <praveen@debian.org>  Fri, 03 Apr 2015 22:48:31 +0530
+
 ruby-mini-magick (4.0.1-2) experimental; urgency=medium
 
   * Team upload.
