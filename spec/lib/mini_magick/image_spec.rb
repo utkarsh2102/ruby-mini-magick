@@ -78,6 +78,11 @@ require "stringio"
           expect { described_class.open(image_path(:not)) }
             .to raise_error(MiniMagick::Invalid)
         end
+
+        it "does not mistake a path with a colon for a URI schema" do
+          expect { described_class.open(image_path(:colon)) }
+            .not_to raise_error
+        end
       end
 
       describe ".create" do
@@ -233,6 +238,11 @@ require "stringio"
           subject.write(output_path)
           expect(described_class.new(output_path.to_s)).to be_valid
         end
+
+        it "works when writing to the same path" do
+          subject.write(subject.path)
+          expect(File.read(subject.path)).not_to be_empty
+        end
       end
 
       describe "#valid?" do
@@ -329,6 +339,17 @@ require "stringio"
         end
       end
 
+      describe "#details" do
+        it "returns a hash of verbose information" do
+          expect(subject.details["Format"]).to match /^JPEG/
+          if MiniMagick.cli == :imagemagick
+            expect(subject.details["Channel depth"]["red"]).not_to be_empty
+          else
+            expect(subject.details["Channel Depths"]["Red"]).not_to be_empty
+          end
+        end
+      end
+
       describe "#layers" do
         it "returns a list of images" do
           expect(subject.layers).to all(be_a(MiniMagick::Image))
@@ -417,9 +438,16 @@ require "stringio"
         it "makes the composited image with the provided extension" do
           result = subject.composite(other_image, 'png')
           expect(result.path).to end_with ".png"
+        end
 
+        it "defaults the extension to the extension of the base image" do
+          subject = described_class.open(image_path(:jpg))
           result = subject.composite(other_image)
-          expect(result.path).to end_with ".jpg"
+          expect(result.path).to end_with ".jpeg"
+
+          subject = described_class.open(image_path(:gif))
+          result = subject.composite(other_image)
+          expect(result.path).to end_with ".gif"
         end
       end
 

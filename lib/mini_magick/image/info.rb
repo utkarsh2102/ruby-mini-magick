@@ -25,6 +25,8 @@ module MiniMagick
           raw_exif(value)
         when "exif"
           exif
+        when "details"
+          details
         else
           raw(value)
         end
@@ -53,9 +55,7 @@ module MiniMagick
       end
 
       def colorspace
-        @info.fetch("colorspace") do
-          @info["colorspace"] = self["%r"]
-        end
+        @info["colorspace"] ||= self["%r"]
       end
 
       def mime_type
@@ -75,10 +75,10 @@ module MiniMagick
       end
 
       def exif
-        @info.fetch("exif") do
+        @info["exif"] ||= (
           output = self["%[EXIF:*]"]
           pairs = output.gsub(/^exif:/, "").split("\n").map { |line| line.split("=") }
-          exif = Hash[pairs].tap do |hash|
+          Hash[pairs].tap do |hash|
             ASCII_ENCODED_EXIF_KEYS.each do |key|
               next unless hash.has_key?(key)
 
@@ -86,22 +86,40 @@ module MiniMagick
               hash[key] = decode_comma_separated_ascii_characters(value)
             end
           end
-
-          @info["exif"] = exif
-        end
+        )
       end
 
       def raw(value)
-        key = "raw:#{value}"
-        @info.fetch(key) do
-          @info[key] = identify { |b| b.format(value) }
-        end
+        @info["raw:#{value}"] ||= identify { |b| b.format(value) }
       end
 
       def signature
-        @info.fetch("signature") do
-          @info["signature"] = self["%#"]
-        end
+        @info["signature"] ||= self["%#"]
+      end
+
+      def details
+        @info["details"] ||= (
+          details_string = identify(&:verbose)
+          details_string.each_line.with_object([]).inject({}) do |details_hash, (line, key_stack)|
+            level = line[/^\s*/].length / 2 - 1
+            next details_hash if level == -1 # we ignore the root level
+            hash = key_stack.inject(details_hash) { |hash, key| hash.fetch(key) }
+            key, value = line.split(":", 2).map(&:strip)
+
+            if level == key_stack.size
+              if value.empty?
+                hash[key] = {}
+                key_stack.push key
+              else
+                hash[key] = value
+              end
+            elsif level < key_stack.size
+              key_stack.pop
+            end
+
+            details_hash
+          end
+        )
       end
 
       def identify
@@ -113,7 +131,6 @@ module MiniMagick
 
       def decode_comma_separated_ascii_characters(encoded_value)
         return encoded_value unless encoded_value.include?(',')
-
         encoded_value.scan(/\d+/).map(&:to_i).map(&:chr).join
       end
 
