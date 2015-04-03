@@ -80,10 +80,10 @@ module MiniMagick
     #
     def self.open(path_or_url, ext = nil)
       ext ||=
-        if path_or_url.to_s =~ URI.regexp
-          File.extname(URI(path_or_url).path)
-        else
+        if File.exist?(path_or_url)
           File.extname(path_or_url)
+        else
+          File.extname(URI(path_or_url).path)
         end
 
       Kernel.open(path_or_url, "rb") do |file|
@@ -258,6 +258,11 @@ module MiniMagick
     # @return [String]
     #
     attribute :signature
+    ##
+    # Returns the information from `identify -verbose` in a Hash format.
+    #
+    # @return [Hash]
+    attribute :details
 
     ##
     # Use this method if you want to access raw Identify's format API.
@@ -405,7 +410,7 @@ module MiniMagick
             builder << output_to
           end
         else
-          FileUtils.copy_file path, output_to
+          FileUtils.copy_file path, output_to unless path == output_to.to_s
         end
       else
         IO.copy_stream File.open(path, "rb"), output_to
@@ -424,7 +429,7 @@ module MiniMagick
     #
     # @see http://www.imagemagick.org/script/composite.php
     #
-    def composite(other_image, output_extension = 'jpg', mask = nil)
+    def composite(other_image, output_extension = type.downcase, mask = nil)
       output_tempfile = MiniMagick::Utilities.tempfile(".#{output_extension}")
 
       MiniMagick::Tool::Composite.new do |composite|

@@ -45,6 +45,7 @@ module MiniMagick
     # @return [Logger]
     #
     attr_accessor :logger
+
     ##
     # If set to `true`, it will `identify` every newly created image, and raise
     # `MiniMagick::Invalid` if the image is not valid. Useful for validating
@@ -63,9 +64,28 @@ module MiniMagick
     #
     attr_accessor :validate_on_write
 
+    ##
+    # If set to `false`, it will not raise errors when ImageMagick returns
+    # status code different than 0. Defaults to `true`.
+    #
+    # @return [Boolean]
+    #
+    attr_accessor :whiny
+
+    ##
+    # Instructs MiniMagick how to execute the shell commands. Available
+    # APIs are "open3" (default) and "posix-spawn" (requires the "posix-spawn"
+    # gem).
+    #
+    # @return [String]
+    #
+    attr_accessor :shell_api
+
     def self.extended(base)
       base.validate_on_create = true
       base.validate_on_write = true
+      base.whiny = true
+      base.shell_api = "open3"
     end
 
     ##
@@ -103,6 +123,8 @@ module MiniMagick
         case processor.to_s
         when "mogrify" then :imagemagick
         when "gm"      then :graphicsmagick
+        else
+          raise MiniMagick::Error, "ImageMagick/GraphicsMagick is not installed"
         end
     end
 

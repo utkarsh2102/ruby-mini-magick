@@ -38,16 +38,12 @@ Delegates: bzlib fftw freetype jng jpeg lcms ltdl lzma png tiff xml zlib
 
 MiniMagick has been tested on following Rubies:
 
-* MRI 1.9.2
 * MRI 1.9.3
-* MRI 2.0.0
-* MRI 2.1.x
+* MRI 2.0
+* MRI 2.1
+* MRI 2.2
 * Rubinius
-
-### JRuby
-
-The latest version (4.0.0) doesn't work on JRuby (because of a bug in JRuby),
-so if you need JRuby support, use the 3.x versions.
+* JRuby (1.7.18 and later)
 
 ## Installation
 
@@ -124,6 +120,9 @@ image = MiniMagick::Image.new("input.jpg") do |b|
 end # the command gets executed
 ```
 
+The yieled builder is an instance of `MiniMagick::Tool::Mogrify`. To learn more
+about its interface, see [Metal](#metal) below.
+
 ### Attributes
 
 A `MiniMagick::Image` has various handy attributes.
@@ -141,11 +140,18 @@ image.resolution  #=> [75, 75]
 image.signature   #=> "60a7848c4ca6e36b8e2c5dea632ecdc29e9637791d2c59ebf7a54c0c6a74ef7e"
 ```
 
-If you need more control, and want to access [raw image
-attributes](http://www.imagemagick.org/script/escape.php), you can use `#[]`.
+If you need more control, you can also access [raw image
+attributes](http://www.imagemagick.org/script/escape.php):
 
 ```ruby
 image["%[gamma]"] # "0.9"
+```
+
+To get the all information about the image, MiniMagick gives you a handy method
+(which just converts the output from `identify -verbose` into a Hash):
+
+```ruby
+image.details #=> {"Format" => "JPEG", "Mime type" => "image/jpeg", "Resolution" => "300x300", ...}
 ```
 
 ### Configuration
@@ -252,17 +258,112 @@ tools directly.
 
 ```ruby
 MiniMagick::Tool::Mogrify.new do |mogrify|
-  mogrify.resize "100x100"
-  mogrify.antialias.+
+  mogrify.resize("100x100")
+  mogrify.negate
   mogrify << "image.jpg"
-end
-# executes `mogrify -resize 100x100 +antialias image.jpg`
+end #=> `mogrify -resize 100x100 -negate image.jpg`
+
+# OR
+
+mogrify = MiniMagick::Tool::Mogrify.new
+mogrify.resize("100x100")
+mogrify.negate
+mogrify << "image.jpg"
+mogrify.call #=> `mogrify -resize 100x100 -negate image.jpg`
 ```
 
-I would highly recommend this if you want to maximize performance of your image
-processing.
+This way of using MiniMagick is highly recommended if you want to maximize
+performance of your image processing. Here are some of the features.
 
-See [MiniMagick::Tool](http://rubydoc.info/github/minimagick/minimagick/MiniMagick/Tool).
+#### Appending
+
+The most basic way of building a command is appending strings:
+
+```rb
+MiniMagick::Tool::Convert.new do |convert|
+  convert << "input.jpg"
+  convert.merge! ["-resize", "500x500", "-negate"]
+  convert << "output.jpg"
+end
+```
+
+Note that it's important that everything that in the command-line you would
+with a space you pass here as a separate argument
+
+```ruby
+# GOOD
+convert << "-resize" << "500x500"
+
+# BAD
+convert << "-resize 500x500"
+```
+
+Shell escaping is also handled for you. If an option has a value that has
+spaces inside it, just pass it as a regular string.
+
+```ruby
+convert << "-distort"
+convert << "Perspective"
+convert << "0,0,0,0 0,45,0,45 69,0,60,10 69,45,60,35"
+```
+```
+convert -distort Perspective '0,0,0,0 0,45,0,45 69,0,60,10 69,45,60,35'
+```
+
+#### Methods
+
+Instead of passing in options directly, you can use Ruby methods:
+
+```ruby
+convert.resize("500x500")
+convert.rotate(90)
+convert.distort("Perspective", "0,0,0,0 0,45,0,45 69,0,60,10 69,45,60,35")
+```
+
+MiniMagick knows which options each tool has, so you will get an explicit
+`NoMethodError` if you happen to have mispelled an option.
+
+#### Chaining
+
+Every method call returns `self`, so you can chain them to create logical groups.
+
+```ruby
+MiniMagick::Tool::Convert.new do |convert|
+  convert << "input.jpg"
+  convert.clone(0).background('gray').shadow('80x5+5+5')
+  convert.negate
+  convert << "output.jpg"
+end
+```
+
+#### "Plus" options
+
+```ruby
+MiniMagick::Tool::Convert.new do |convert|
+  convert << "input.jpg"
+  convert.repage.+
+  convert.distort.+("Perspective", "more args")
+end
+```
+```
+convert input.jpg +repage +distort Perspective 'more args'
+```
+
+#### Stacks
+
+```ruby
+MiniMagick::Tool::Convert.new do |convert|
+  convert << "wand.gif"
+  convert.stack do |stack|
+    stack << "wand.gif"
+    stack.rotate(30)
+  end
+  convert << "images.gif"
+end
+```
+```
+convert wand.gif \( wand.gif -rotate 90 \) images.gif
+```
 
 ## Troubleshooting
 
@@ -270,12 +371,34 @@ See [MiniMagick::Tool](http://rubydoc.info/github/minimagick/minimagick/MiniMagi
 
 This gem raises an error when ImageMagick returns a nonzero exit code.
 Sometimes, however, ImageMagick returns nonzero exit codes when the command
-actually went ok. In these cases, to avoid raising errors, you can pass `false`
-to `MiniMagick::Tool`'s constructor.
+actually went ok. In these cases, to avoid raising errors, you can add the
+following configuration:
+
+```rb
+MiniMagick.configure do |config|
+  config.whiny = false
+end
+```
+
+If you're using the metal version, you can pass the `whiny` value to the
+constructor:
 
 ```rb
 MiniMagick::Tool::Identify.new(false) do |b|
   b.help
+end
+```
+
+### `Errno::ENOMEM`
+
+It can happen that, when dealing with very large images, the process runs out of
+memory, and `Errno::ENOMEM` is raised in your code. In that case try installing
+the [posix-spawn](https://github.com/rtomayko/posix-spawn) gem, and tell MiniMagick
+to use it when executing shell commands.
+
+```rb
+MiniMagick.configure do |config|
+  config.shell_api = "posix-spawn"
 end
 ```
 

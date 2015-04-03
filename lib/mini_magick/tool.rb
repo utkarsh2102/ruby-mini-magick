@@ -65,7 +65,7 @@ module MiniMagick
     #   MiniMagick::Tool::Identify.new(false) do |identify|
     #     identify.help # returns exit status 1, which would otherwise throw an error
     #   end
-    def initialize(name, whiny = true)
+    def initialize(name, whiny = MiniMagick.whiny)
       @name  = name
       @whiny = whiny
       @args  = []
@@ -149,10 +149,11 @@ module MiniMagick
     # Changes the last operator to its "plus" form.
     #
     # @example
-    #   mogrify = MiniMagick::Tool::Mogrify.new
-    #   mogrify.antialias.+
-    #   mogrify.distort.+("Perspective '0,0,4,5'")
-    #   mogrify.command #=> ["mogrify", "+antialias", "+distort", "Perspective '0,0,4,5'"]
+    #   MiniMagick::Tool::Mogrify.new do |mogrify|
+    #     mogrify.antialias.+
+    #     mogrify.distort.+("Perspective", "0,0,4,5 89,0,45,46")
+    #   end
+    #   # executes `mogrify +antialias +distort Perspective '0,0,4,5 89,0,45,46'`
     #
     # @return [self]
     #
@@ -160,6 +161,27 @@ module MiniMagick
       args[-1] = args[-1].sub(/^-/, '+')
       self.merge!(values)
       self
+    end
+
+    ##
+    # Create an ImageMagick stack in the command (surround.
+    #
+    # @example
+    #   MiniMagick::Tool::Convert.new do |convert|
+    #     convert << "wand.gif"
+    #     convert.stack do |stack|
+    #       stack << "wand.gif"
+    #       stack.rotate(30)
+    #     end
+    #     convert.append.+
+    #     convert << "images.gif"
+    #   end
+    #   # executes `convert wand.gif \( wizard.gif -rotate 30 \) +append images.gif`
+    #
+    def stack
+      self << "("
+      yield self
+      self << ")"
     end
 
     private
@@ -202,11 +224,12 @@ module MiniMagick
       ##
       # Creates method based on command-line option's name.
       #
-      #  mogrify = MiniMagick::Tool.new("mogrify")
-      #  mogrify.antialias
-      #  mogrify.depth(8)
-      #  mogrify.resize("500x500")
-      #  mogirfy.command.join(" ") #=> "mogrify -antialias -depth "8" -resize "500x500""
+      #   mogrify = MiniMagick::Tool.new("mogrify")
+      #   mogrify.antialias
+      #   mogrify.depth(8)
+      #   mogrify.resize("500x500")
+      #   mogirfy.command.join(" ")
+      #   #=> "mogrify -antialias -depth 8 -resize 500x500"
       #
       def option(*options)
         options.each do |option|
