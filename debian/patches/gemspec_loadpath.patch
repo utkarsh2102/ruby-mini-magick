@@ -1,0 +1,20 @@
+Description: use the library in lib/ to populate gemspecs fields
+ If we #push instead of #unshift lib/ to the $LOAD_PATH, and if another version
+ of ruby-mini-magick is installed, that version will have higher priority and
+ its version will appear in the gemspecs instead of the version of the package.
+Bug-Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=781994
+Bug: https://github.com/minimagick/minimagick/pull/303
+Author: Cédric Boutillier <boutil@debian.org>
+Forwarded: yes
+Applied-Upstream: commit:https://github.com/minimagick/minimagick/commit/6b73f7105c59f54a9820778b615f952c58e5981c
+Last-Update: 2015-04-29
+
+--- a/mini_magick.gemspec
++++ b/mini_magick.gemspec
+@@ -1,5 +1,5 @@
+ # -*- encoding: utf-8 -*-
+-$:.push File.expand_path('../lib', __FILE__)
++$:.unshift File.expand_path('../lib', __FILE__)
+ 
+ require 'mini_magick/version'
+ 
