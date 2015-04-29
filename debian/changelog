@@ -1,3 +1,12 @@
+ruby-mini-magick (4.2.3-1) unstable; urgency=medium
+
+  * Team upload
+  * Imported Upstream version 4.2.3
+  * Ensure that version in the gemspec is correct (Closes: #781994)
+  * Tests still wait ruby-rspec >= 3.1 in unstable to be reactivated
+
+ -- Cédric Boutillier <boutil@debian.org>  Wed, 29 Apr 2015 23:50:07 +0200
+
 ruby-mini-magick (4.2.0-2) unstable; urgency=medium
 
   * Team upload.
