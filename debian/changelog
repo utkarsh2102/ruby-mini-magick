@@ -1,3 +1,10 @@
+ruby-mini-magick (4.2.0-2) unstable; urgency=medium
+
+  * Team upload.
+  * Re-upload to unstable. 
+
+ -- Pirate Praveen <praveen@debian.org>  Wed, 29 Apr 2015 13:18:00 +0530
+
 ruby-mini-magick (4.2.0-1) experimental; urgency=medium
 
   * Team upload.
