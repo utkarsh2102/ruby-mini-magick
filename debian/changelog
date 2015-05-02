@@ -1,3 +1,15 @@
+ruby-mini-magick (4.2.3-2~exp1) experimental; urgency=medium
+
+  * Team upload
+  * Reactivate tests in experimental, as it has ruby-rspec >= 3.1
+    + disable remove-unsuported-rspec-features patch
+    + re-enable debian/ruby-tests.rake
+    + add version >= 3.1~ to ruby-rspec build-dependency
+  * Drop ruby-subexec and add ruby-posix-spawn to dependencies and
+    build-dependencies
+
+ -- Cédric Boutillier <boutil@debian.org>  Sat, 02 May 2015 23:44:39 +0200
+
 ruby-mini-magick (4.2.3-1) unstable; urgency=medium
 
   * Team upload
