@@ -9,7 +9,7 @@ Build-Depends: debhelper (>= 7.0.50~),
                imagemagick (>= 8:6.6.3~),
                rake,
                ruby-mocha,
-               ruby-rspec,
+               ruby-rspec (>= 3.1~),
                ruby-subexec,
                pry
 Standards-Version: 3.9.6
