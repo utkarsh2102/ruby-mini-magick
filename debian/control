@@ -9,8 +9,8 @@ Build-Depends: debhelper (>= 7.0.50~),
                imagemagick (>= 8:6.6.3~),
                rake,
                ruby-mocha,
+               ruby-posix-spawn,
                ruby-rspec (>= 3.1~),
-               ruby-subexec,
                pry
 Standards-Version: 3.9.6
 Vcs-Git: git://anonscm.debian.org/pkg-ruby-extras/ruby-mini-magick.git
@@ -23,7 +23,7 @@ Architecture: all
 XB-Ruby-Versions: ${ruby:Versions}
 Depends: imagemagick (>= 6.6.3~) | graphicsmagick,
          ruby | ruby-interpreter,
-         ruby-subexec,
+         ruby-posix-spawn,
          ${misc:Depends},
          ${shlibs:Depends}
 Description: wrapper for ImageMagick with a small memory footprint
