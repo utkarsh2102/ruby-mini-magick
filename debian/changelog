@@ -2,6 +2,7 @@ ruby-mini-magick (4.2.7-1) UNRELEASED; urgency=medium
 
   * Team upload.
   * New upstream release.
+  * Remove patch gemspec_loadpath.patch (applied already).
 
  -- Pirate Praveen <praveen@debian.org>  Fri, 28 Aug 2015 21:43:24 +0530
 

@@ -1,4 +1,3 @@
 #remove-unsuported-rspec-features
 remove-rubygems
 remove-remote-tests
-gemspec_loadpath.patch
