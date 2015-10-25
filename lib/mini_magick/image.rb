@@ -121,7 +121,7 @@ module MiniMagick
     #
     def self.attribute(name, key = name.to_s)
       define_method(name) do |*args|
-        if args.any? && MiniMagick::Tool::Mogrify.instance_methods.include?(name)
+        if args.any? && name != :resolution
           mogrify { |b| b.send(name, *args) }
         else
           @info[key, *args]
@@ -223,11 +223,17 @@ module MiniMagick
     #
     attribute :dimensions
     ##
-    # Returns the file size of the image.
+    # Returns the file size of the image (in bytes).
     #
     # @return [Integer]
     #
     attribute :size
+    ##
+    # Returns the file size in a human readable format.
+    #
+    # @return [String]
+    #
+    attribute :human_size
     ##
     # @return [String]
     #
@@ -326,13 +332,11 @@ module MiniMagick
     # @return [self]
     #
     def format(format, page = 0)
-      @info.clear
-
       if @tempfile
         new_tempfile = MiniMagick::Utilities.tempfile(".#{format}")
         new_path = new_tempfile.path
       else
-        new_path = path.sub(/\.\w+$/, ".#{format}")
+        new_path = path.sub(/(\.\w+)?$/, ".#{format}")
       end
 
       MiniMagick::Tool::Convert.new do |convert|
@@ -349,6 +353,7 @@ module MiniMagick
       end
 
       path.replace new_path
+      @info.clear
 
       self
     end
@@ -381,16 +386,12 @@ module MiniMagick
     #
     def method_missing(name, *args)
       mogrify do |builder|
-        if builder.respond_to?(name)
-          builder.send(name, *args)
-        else
-          super
-        end
+        builder.send(name, *args)
       end
     end
 
     def respond_to_missing?(method_name, include_private = false)
-      MiniMagick::Tool::Mogrify.new.respond_to?(method_name, include_private)
+      true
     end
 
     ##
@@ -490,8 +491,6 @@ module MiniMagick
     end
 
     def mogrify(page = nil)
-      @info.clear
-
       MiniMagick::Tool::Mogrify.new do |builder|
         builder.instance_eval do
           def format(*args)
@@ -502,6 +501,8 @@ module MiniMagick
         yield builder if block_given?
         builder << (page ? "#{path}[#{page}]" : path)
       end
+
+      @info.clear
 
       self
     end

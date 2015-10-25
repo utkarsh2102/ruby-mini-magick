@@ -1,6 +1,4 @@
 require 'mini_magick/configuration'
-require 'mini_magick/tool'
-require 'mini_magick/image'
 
 module MiniMagick
 
@@ -19,6 +17,7 @@ module MiniMagick
     old_cli = self.cli
     self.cli = cli
     yield
+  ensure
     self.cli = old_cli
   end
 
@@ -51,3 +50,6 @@ module MiniMagick
   class Invalid < StandardError; end
 
 end
+
+require 'mini_magick/tool'
+require 'mini_magick/image'

@@ -168,7 +168,7 @@ For a complete list of configuration options, see
 
 ### Composite
 
-MiniMagick also alows you to
+MiniMagick also allows you to
 [composite](http://www.imagemagick.org/script/composite.php) images:
 
 ```ruby
@@ -250,6 +250,11 @@ MiniMagick.with_cli(:graphicsmagick) do
   # Some processing that GraphicsMagick is better at
 end
 ```
+
+**WARNING**: If you're building a multithreaded web application, you should
+change the CLI only on application startup. This is because the configuration is
+global, so if you change it in a controller action, other threads in the same
+process will also have their CLI changed, which could lead to race conditions.
 
 ### Metal
 
