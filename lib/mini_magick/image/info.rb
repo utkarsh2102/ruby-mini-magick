@@ -11,7 +11,7 @@ module MiniMagick
 
       def [](value, *args)
         case value
-        when "format", "width", "height", "dimensions", "size"
+        when "format", "width", "height", "dimensions", "size", "human_size"
           cheap_info(value)
         when "colorspace"
           colorspace
@@ -45,7 +45,8 @@ module MiniMagick
             "width"      => Integer(width),
             "height"     => Integer(height),
             "dimensions" => [Integer(width), Integer(height)],
-            "size"       => size.to_i,
+            "size"       => File.size(@path),
+            "human_size" => size,
           )
 
           @info.fetch(value)
@@ -102,6 +103,7 @@ module MiniMagick
           details_string = identify(&:verbose)
           key_stack = []
           details_string.lines.to_a[1..-1].each_with_object({}) do |line, details_hash|
+            next if line.strip.length.zero?
             level = line[/^\s*/].length / 2 - 1
             key_stack.pop until key_stack.size <= level
 

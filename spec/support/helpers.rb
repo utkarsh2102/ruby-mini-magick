@@ -2,14 +2,15 @@ require "tempfile"
 
 module Helpers
   def image_path(type = :default)
-    if type != :without_extension
+    if type != :jpg_without_extension
       File.join("spec/fixtures",
         case type
-        when :default, :jpg   then "default.jpg"
-        when :animation, :gif then "animation.gif"
-        when :exif            then "exif.jpg"
-        when :not             then "not_an_image.rb"
-        when :colon           then "with:colon.jpg"
+        when :default, :jpg       then "default.jpg"
+        when :animation, :gif     then "animation.gif"
+        when :exif                then "exif.jpg"
+        when :empty_identify_line then "empty_identify_line.png"
+        when :not                 then "not_an_image.rb"
+        when :colon               then "with:colon.jpg"
         else
           fail "image #{type.inspect} doesn't exist"
         end
@@ -33,4 +34,10 @@ end
 
 RSpec.configure do |config|
   config.include Helpers
+end
+
+RSpec::Matchers.define :be_nonempty do
+  match do |object|
+    !object.empty?
+  end
 end

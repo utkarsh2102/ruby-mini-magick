@@ -179,10 +179,20 @@ require "stringio"
           }.to change { subject.dimensions }.to [100, 100]
         end
 
-        it "works without an extension" do
-          subject = described_class.open(image_path(:without_extension))
-          expect { subject.format("png") }
-            .to change { File.extname(subject.path) }.from("").to(".png")
+        it "works without an extension with .open" do
+          subject = described_class.open(image_path(:jpg_without_extension))
+          subject.format("png")
+
+          expect(File.extname(subject.path)).to eq ".png"
+          expect(subject.type).to eq "PNG"
+        end
+
+        it "works without an extension with .new" do
+          subject = described_class.new(image_path(:jpg_without_extension))
+          subject.format("png")
+
+          expect(File.extname(subject.path)).to eq ".png"
+          expect(subject.type).to eq "PNG"
         end
 
         it "deletes the previous tempfile" do
@@ -206,6 +216,11 @@ require "stringio"
           subject = described_class.open(image_path(:animation))
           subject.format('jpg')
           expect(subject).to be_valid
+        end
+
+        it "clears the info only at the end" do
+          subject.format('png') { subject.type }
+          expect(subject.type).to eq "PNG"
         end
 
         it "returns self" do
@@ -297,7 +312,8 @@ require "stringio"
         expect(subject.width).to be_a(Fixnum).and be_nonzero
         expect(subject.height).to be_a(Fixnum).and be_nonzero
         expect(subject.dimensions).to all(be_a(Fixnum))
-        expect(subject.size).to be_a(Fixnum).and be_nonzero
+        expect(subject.size).to be_a(Integer).and be_nonzero
+        expect(subject.human_size).to be_a(String).and be_nonempty
         expect(subject.colorspace).to be_a(String)
         expect(subject.resolution).to all(be_a(Fixnum))
         expect(subject.signature).to match(/[[:alnum:]]{64}/)
@@ -351,6 +367,17 @@ require "stringio"
             expect(subject.details).to have_key("Resolution")
           end
         end
+
+        context "when verbose information includes an empty line" do
+          subject { described_class.new(image_path(:empty_identify_line)) }
+          it "skips the empty line" do
+            if MiniMagick.cli == :imagemagick
+              expect(subject.details["Properties"]).to have_key("date:create")
+            else
+              expect(subject.details).to have_key("Date:create")
+            end
+          end
+        end
       end
 
       describe "#layers" do
@@ -389,17 +416,6 @@ require "stringio"
             expect(subject.respond_to?(:resize)).to eq true
           end
         end
-
-        context "for an unknown method" do
-          it "fails with a NoMethodError" do
-            expect { subject.foo }
-              .to raise_error(NoMethodError, /MiniMagick::Image/)
-          end
-
-          it "cannot be responded to" do
-            expect(subject.respond_to?(:foo)).to eq false
-          end
-        end
       end
 
       describe "#combine_options" do
@@ -412,6 +428,11 @@ require "stringio"
         it "doesn't allow calling of #format" do
           expect { subject.combine_options { |c| c.format("png") } }
             .to raise_error(NoMethodError)
+        end
+
+        it "clears the info only at the end" do
+          subject.combine_options { |c| c.resize('20x30!'); subject.width }
+          expect(subject.dimensions).to eq [20, 30]
         end
 
         it "returns self" do

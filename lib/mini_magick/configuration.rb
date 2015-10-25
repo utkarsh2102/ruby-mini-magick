@@ -7,7 +7,7 @@ module MiniMagick
     # Set whether you want to use [ImageMagick](http://www.imagemagick.org) or
     # [GraphicsMagick](http://www.graphicsmagick.org).
     #
-    # @return [Symbol] `:imagemagick` or `:minimagick`
+    # @return [Symbol] `:imagemagick` or `:graphicsmagick`
     #
     attr_accessor :cli
     # @private (for backwards compatibility)
@@ -114,8 +114,6 @@ module MiniMagick
           "processor has to be set to either \"mogrify\" or \"gm\"" \
           ", was set to #{@processor.inspect}"
       end
-
-      reload_tools
     end
 
     def cli
@@ -131,13 +129,11 @@ module MiniMagick
     def cli=(value)
       @cli = value
 
-      unless [:imagemagick, :graphicsmagick].include?(@cli)
+      if not [:imagemagick, :graphicsmagick].include?(@cli)
         raise ArgumentError,
           "CLI has to be set to either :imagemagick or :graphicsmagick" \
           ", was set to #{@cli.inspect}"
       end
-
-      reload_tools
     end
 
     def cli_path
@@ -148,8 +144,9 @@ module MiniMagick
       @logger || MiniMagick::Logger.new($stdout)
     end
 
+    # Backwards compatibility
     def reload_tools
-      MiniMagick::Tool::OptionMethods.instances.each(&:reload_methods)
+      warn "[MiniMagick] MiniMagick.reload_tools is deprecated because it is no longer necessary"
     end
 
   end

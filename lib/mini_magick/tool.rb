@@ -15,23 +15,10 @@ module MiniMagick
   #
   class Tool
 
-    autoload :Animate,   "mini_magick/tool/animate"
-    autoload :Compare,   "mini_magick/tool/compare"
-    autoload :Composite, "mini_magick/tool/composite"
-    autoload :Conjure,   "mini_magick/tool/conjure"
-    autoload :Convert,   "mini_magick/tool/convert"
-    autoload :Display,   "mini_magick/tool/display"
-    autoload :Identify,  "mini_magick/tool/identify"
-    autoload :Import,    "mini_magick/tool/import"
-    autoload :Mogrify,   "mini_magick/tool/mogrify"
-    autoload :Montage,   "mini_magick/tool/montage"
-    autoload :Stream,    "mini_magick/tool/stream"
-
-    # @private
-    def self.inherited(child)
-      child_name = child.name.split("::").last.downcase
-      child.send :include, MiniMagick::Tool::OptionMethods.new(child_name)
-    end
+    CREATION_OPERATORS = %w[
+      xc canvas logo rose gradient radial-gradient plasma tile pattern label
+      caption text
+    ]
 
     ##
     # Aside from classic instantiation, it also accepts a block, and then
@@ -78,7 +65,7 @@ module MiniMagick
     #   mogrify = MiniMagick::Tool::Mogrify.new
     #   mogrify.resize("500x500")
     #   mogrify << "path/to/image.jpg"
-    #   mogirfy.call # executes `mogrify -resize 500x500 path/to/image.jpg`
+    #   mogrify.call # executes `mogrify -resize 500x500 path/to/image.jpg`
     #
     # @param whiny [Boolean] Whether you want an error to be raised when
     #   ImageMagick returns an exit code of 1. You may want this because
@@ -87,9 +74,9 @@ module MiniMagick
     #
     # @return [String] Output of the command
     #
-    def call(whiny = @whiny)
-      shell = MiniMagick::Shell.new(whiny)
-      shell.run(command).strip
+    def call(whiny = @whiny, options = {})
+      shell = MiniMagick::Shell.new
+      shell.run(command, options.merge(whiny: whiny)).strip
     end
 
     ##
@@ -185,85 +172,49 @@ module MiniMagick
     end
 
     ##
-    # Dynamically generates modules with dynamically generated option methods
-    # for each command-line tool. It uses the `-help` page of a command-line
-    # tool and generates methods from it. It then includes the generated
-    # module into the tool class.
+    # Define creator operator methods
     #
-    # @private
+    #   mogrify = MiniMagick::Tool.new("mogrify")
+    #   mogrify.canvas("khaki")
+    #   mogrify.command.join(" ") #=> "mogrify canvas:khaki"
     #
-    class OptionMethods < Module # think about it for a minute
-
-      def self.instances
-        @instances ||= []
+    CREATION_OPERATORS.each do |operator|
+      define_method(operator.gsub('-', '_')) do |value = nil|
+        self << "#{operator}:#{value}"
+        self
       end
+    end
 
-      def initialize(tool_name)
-        @tool_name = tool_name
-        reload_methods
-        self.class.instances << self
-      end
+    ##
+    # Any undefined method will be transformed into a CLI option
+    #
+    #   mogrify = MiniMagick::Tool.new("mogrify")
+    #   mogrify.adaptive_blur("...")
+    #   mogrify.foo_bar
+    #   mogrify.command.join(" ") "mogrify -adaptive-blur ... -foo-bar"
+    #
+    def method_missing(name, *args)
+      option = "-#{name.to_s.tr('_', '-')}"
+      self << option
+      self.merge!(args)
+      self
+    end
 
-      def to_s
-        "OptionMethods(#{@tool_name})"
-      end
-
-      ##
-      # Dynamically generates operator methods from the "-help" page.
-      #
-      def reload_methods
-        instance_methods(false).each { |method| undef_method(method) }
-        creation_operator *creation_operators
-        option *cli_options
-      end
-
-      ##
-      # Creates method based on command-line option's name.
-      #
-      #   mogrify = MiniMagick::Tool.new("mogrify")
-      #   mogrify.antialias
-      #   mogrify.depth(8)
-      #   mogrify.resize("500x500")
-      #   mogirfy.command.join(" ")
-      #   #=> "mogrify -antialias -depth 8 -resize 500x500"
-      #
-      def option(*options)
-        options.each do |option|
-          define_method(option[1..-1].tr('-', '_')) do |*values|
-            self << option
-            self.merge!(values)
-            self
-          end
-        end
-      end
-
-      ##
-      # Creates method based on creation operator's name.
-      #
-      #   mogrify = MiniMagick::Tool.new("mogrify")
-      #   mogrify.canvas("khaki")
-      #   mogrify.command.join(" ") #=> "mogrify canvas:khaki"
-      #
-      def creation_operator(*operators)
-        operators.each do |operator|
-          define_method(operator.gsub('-', '_')) do |value = nil|
-            self << "#{operator}:#{value}"
-            self
-          end
-        end
-      end
-
-      def creation_operators
-        %w[xc canvas logo rose gradient radial-gradient
-           plasma tile pattern label caption text]
-      end
-
-      def cli_options
-        help = MiniMagick::Tool.new(@tool_name, false) { |b| b << "-help" }
-        cli_options = help.scan(/^\s+-[a-z\-]+/).map(&:strip)
-      end
-
+    def respond_to_missing?(method_name, include_private = false)
+      true
     end
 
   end
 end
+
+require "mini_magick/tool/animate"
+require "mini_magick/tool/compare"
+require "mini_magick/tool/composite"
+require "mini_magick/tool/conjure"
+require "mini_magick/tool/convert"
+require "mini_magick/tool/display"
+require "mini_magick/tool/identify"
+require "mini_magick/tool/import"
+require "mini_magick/tool/mogrify"
+require "mini_magick/tool/montage"
+require "mini_magick/tool/stream"
