@@ -2,7 +2,8 @@ Source: ruby-mini-magick
 Section: ruby
 Priority: optional
 Maintainer: Debian Ruby Extras Maintainers <pkg-ruby-extras-maintainers@lists.alioth.debian.org>
-Uploaders: Markus Tornow <tornow@riseup.net>
+Uploaders: Markus Tornow <tornow@riseup.net>,
+ Pirate Praveen <praveen@debian.org>
 Build-Depends: debhelper (>= 7.0.50~),
                gem2deb (>= 0.3.0~),
                graphicsmagick,
