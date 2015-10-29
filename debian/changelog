@@ -1,9 +1,9 @@
-ruby-mini-magick (4.3.3-1) UNRELEASED; urgency=medium
+ruby-mini-magick (4.3.3-1) experimental; urgency=medium
 
   * New upstream release
   * Add myself to uploaders
 
- -- Pirate Praveen <praveen@debian.org>  Sun, 25 Oct 2015 23:42:35 +0530
+ -- Pirate Praveen <praveen@debian.org>  Fri, 30 Oct 2015 02:57:06 +0530
 
 ruby-mini-magick (4.2.7-1) experimental; urgency=medium
 
