@@ -1,3 +1,10 @@
+ruby-mini-magick (4.3.3-2) unstable; urgency=medium
+
+  * Re-upload to unstable
+  * Check gemspec dependencies in build
+
+ -- Pirate Praveen <praveen@debian.org>  Sun, 20 Dec 2015 14:19:33 +0530
+
 ruby-mini-magick (4.3.3-1) experimental; urgency=medium
 
   * New upstream release
