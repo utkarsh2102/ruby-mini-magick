@@ -243,7 +243,7 @@ end
 
 If you're a real ImageMagick guru, you might want to use GraphicsMagick only
 for certain processing blocks (because it's more efficient), or vice versa. You
-can acomplish this with `.with_cli`:
+can accomplish this with `.with_cli`:
 
 ```ruby
 MiniMagick.with_cli(:graphicsmagick) do
@@ -292,8 +292,8 @@ MiniMagick::Tool::Convert.new do |convert|
 end
 ```
 
-Note that it's important that everything that in the command-line you would
-with a space you pass here as a separate argument
+Note that it is important that every command you would pass to the command line
+has to be separated with `<<`, e.g.:
 
 ```ruby
 # GOOD

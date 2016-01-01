@@ -319,6 +319,11 @@ require "stringio"
         expect(subject.signature).to match(/[[:alnum:]]{64}/)
       end
 
+      it "generates attributes of layers" do
+        expect(subject.layers[0].type).to match(/^[A-Z]+$/)
+        expect(subject.layers[0].size).to be > 0
+      end
+
       it "changes colorspace when called with an argument" do
         expect_any_instance_of(MiniMagick::Tool::Mogrify).to receive(:call)
         subject.colorspace("Gray")
@@ -412,8 +417,9 @@ require "stringio"
             expect(subject.resize('20x30!')).to eq subject
           end
 
-          it "can be responed to" do
-            expect(subject.respond_to?(:resize)).to eq true
+          it "can be responded to" do
+            expect(subject.respond_to?(:gravity)).to eq true
+            expect(subject.respond_to?(:bla)).to eq false
           end
         end
       end
