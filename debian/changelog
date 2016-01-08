@@ -1,3 +1,9 @@
+ruby-mini-magick (4.3.6-2) unstable; urgency=medium
+
+  * Reupload to unstable 
+
+ -- Pirate Praveen <praveen@debian.org>  Sat, 09 Jan 2016 00:30:31 +0530
+
 ruby-mini-magick (4.3.6-1) experimental; urgency=medium
 
   * New upstream release
