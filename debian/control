@@ -5,7 +5,7 @@ Maintainer: Debian Ruby Extras Maintainers <pkg-ruby-extras-maintainers@lists.al
 Uploaders: Markus Tornow <tornow@riseup.net>,
  Pirate Praveen <praveen@debian.org>
 Build-Depends: debhelper (>= 9~),
-               gem2deb (>= 0.3.0~),
+               gem2deb,
                graphicsmagick,
                imagemagick (>= 8:6.6.3~),
                rake,
