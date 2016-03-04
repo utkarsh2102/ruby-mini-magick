@@ -3,16 +3,16 @@ Section: ruby
 Priority: optional
 Maintainer: Debian Ruby Extras Maintainers <pkg-ruby-extras-maintainers@lists.alioth.debian.org>
 Uploaders: Markus Tornow <tornow@riseup.net>,
- Pirate Praveen <praveen@debian.org>
+           Pirate Praveen <praveen@debian.org>
 Build-Depends: debhelper (>= 9~),
                gem2deb,
                graphicsmagick,
                imagemagick (>= 8:6.6.3~),
+               pry,
                rake,
                ruby-mocha,
                ruby-posix-spawn,
-               ruby-rspec (>= 3.1~),
-               pry
+               ruby-rspec (>= 3.1~)
 Standards-Version: 3.9.7
 Vcs-Git: https://anonscm.debian.org/git/pkg-ruby-extras/ruby-mini-magick.git
 Vcs-Browser: https://anonscm.debian.org/cgit/pkg-ruby-extras/ruby-mini-magick.git
