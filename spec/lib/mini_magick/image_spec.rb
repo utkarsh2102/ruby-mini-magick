@@ -153,6 +153,14 @@ require "stringio"
         end
       end
 
+      describe "#tempfile" do
+        it "returns the underlying temporary file" do
+          image = described_class.open(image_path)
+
+          expect(image.tempfile).to be_a(Tempfile)
+        end
+      end
+
       describe "#format" do
         subject { described_class.open(image_path(:jpg)) }
 
@@ -216,6 +224,14 @@ require "stringio"
           subject = described_class.open(image_path(:animation))
           subject.format('jpg')
           expect(subject).to be_valid
+        end
+
+        it "reformats a layer" do
+          subject = described_class.open(image_path(:animation))
+          layer = subject.layers.first
+          layer.format('jpg')
+          expect(layer).to be_valid
+          expect(File.exist?(layer.path)).to eq true
         end
 
         it "clears the info only at the end" do
@@ -380,6 +396,27 @@ require "stringio"
               expect(subject.details["Properties"]).to have_key("date:create")
             else
               expect(subject.details).to have_key("Date:create")
+            end
+          end
+        end
+
+        context "when verbose information includes a badly encoded line do",
+          skip_cli: :graphicsmagick do
+          subject { described_class.new(image_path(:badly_encoded_line)) }
+          it "skips the badly encoded line" do
+            expect(subject.details).not_to have_key("Software")
+          end
+        end
+
+        # GraphicsMagick does not output the clipping path
+        context "when verbose information includes a clipping path",
+          skip_cli: :graphicsmagick do
+          subject { described_class.new(image_path(:clipping_path)) }
+          it "does not hang when parsing verbose data" do
+            # Retrieving .details should happen very quickly but as of v4.3.6
+            # will hang indefinitely without the timeout
+            Timeout::timeout(10) do
+              expect(subject.details['Clipping path'][0..4]).to eq "<?xml"
             end
           end
         end
