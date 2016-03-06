@@ -42,6 +42,7 @@ MiniMagick has been tested on following Rubies:
 * MRI 2.0
 * MRI 2.1
 * MRI 2.2
+* MRI 2.3
 * Rubinius
 * JRuby (1.7.18 and later)
 
@@ -120,7 +121,7 @@ image = MiniMagick::Image.new("input.jpg") do |b|
 end # the command gets executed
 ```
 
-The yieled builder is an instance of `MiniMagick::Tool::Mogrify`. To learn more
+The yielded builder is an instance of `MiniMagick::Tool::Mogrify`. To learn more
 about its interface, see [Metal](#metal) below.
 
 ### Attributes
