@@ -1,4 +1,6 @@
-ruby-mini-magick (4.4.0-2) unstable; urgency=medium
+ruby-mini-magick (4.5.1-1) unstable; urgency=medium
+
+  * New upstream release
 
   [ Balasankar C ]
   * Add patch to skip failing trivial tests (workaround for #835078)
