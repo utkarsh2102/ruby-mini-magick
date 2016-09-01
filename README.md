@@ -218,18 +218,18 @@ image.valid?
 image.validate! # raises MiniMagick::Invalid if image is invalid
 ```
 
-### Debugging
+### Logging
 
-When things go wrong and commands start failing, you can set the debug mode:
+You can choose to log MiniMagick commands and their execution times:
 
 ```ruby
-MiniMagick.configure do |config|
-  config.debug = true
-end
+MiniMagick.logger.level = Logger::DEBUG
+```
+```
+D, [2016-03-19T07:31:36.755338 #87191] DEBUG -- : [0.01s] identify /var/folders/k7/6zx6dx6x7ys3rv3srh0nyfj00000gn/T/mini_magick20160319-87191-1ve31n1.jpg
 ```
 
-In this mode every command that gets executed in the shell will be written
-to stdout.
+In Rails you'll probably want to set `MiniMagick.logger = Rails.logger`.
 
 ### Switching CLIs (ImageMagick \<=\> GraphicsMagick)
 
@@ -371,6 +371,32 @@ end
 convert wand.gif \( wand.gif -rotate 90 \) images.gif
 ```
 
+#### Passing STDIN
+
+If you want to pass something to standard input, you can pass the `:stdin`
+option to `#call`:
+
+```ruby
+identify = MiniMagick::Tool::Identify.new
+identify.stdin # alias for `identify << "-"`
+identify.call(stdin: image_content)
+```
+
+#### Capturing STDERR
+
+Some MiniMagick tools such as `compare` output the result of the command on
+standard error, even if the command succeeded. The result of
+`MiniMagick::Tool#call` is always the standard output, but if you pass it a
+block, it will yield the stdout, stderr and exit status of the command:
+
+```rb
+compare = MiniMagick::Tool::Compare.new
+# build the command
+compare.call do |stdout, stderr, status|
+  # ...
+end
+```
+
 ## Troubleshooting
 
 ### Errors being raised when they shouldn't
@@ -386,11 +412,11 @@ MiniMagick.configure do |config|
 end
 ```
 
-If you're using the metal version, you can pass the `whiny` value to the
+If you're using the tool directly, you can pass `whiny: false` value to the
 constructor:
 
 ```rb
-MiniMagick::Tool::Identify.new(false) do |b|
+MiniMagick::Tool::Identify.new(whiny: false) do |b|
   b.help
 end
 ```

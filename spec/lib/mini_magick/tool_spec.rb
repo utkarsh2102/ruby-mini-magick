@@ -15,6 +15,18 @@ RSpec.describe MiniMagick::Tool do
       output = subject.call
       expect(output).not_to end_with("\n")
     end
+
+    it "accepts a block, and yields stdin, stdout and exit status" do
+      allow_any_instance_of(MiniMagick::Shell).to receive(:execute).and_return(["stdout", "stderr", 0])
+      expect { |block| subject.call(&block) }.to yield_with_args("stdout", "stderr", 0)
+      expect(subject.call{}).to eq "stdout"
+    end
+
+    it "accepts stdin" do
+      subject.stdin
+      output = subject.call(stdin: File.read(image_path))
+      expect(output).to match(/JPEG/)
+    end
   end
 
   describe ".new" do
@@ -23,6 +35,11 @@ RSpec.describe MiniMagick::Tool do
         builder << image_path(:gif)
       end
       expect(output).to match("GIF")
+    end
+
+    it "defaults whiny to MiniMagick.whiny" do
+      allow(MiniMagick).to receive(:whiny).and_return(false)
+      expect(subject.instance_variable_get("@whiny")).to eq false
     end
   end
 

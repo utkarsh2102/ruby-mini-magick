@@ -340,8 +340,7 @@ module MiniMagick
         new_tempfile = MiniMagick::Utilities.tempfile(".#{format}")
         new_path = new_tempfile.path
       else
-        new_path = path.sub(/(\.\w+)?$/, ".#{format}")
-        new_path.sub!(/\[(\d+)\]/, '_\1') if layer?
+        new_path = Pathname(path).sub_ext(".#{format}").to_s
       end
 
       input_path = path.dup
@@ -354,7 +353,7 @@ module MiniMagick
       end
 
       if @tempfile
-        @tempfile.unlink
+        destroy!
         @tempfile = new_tempfile
       else
         File.delete(path) unless path == new_path || layer?
@@ -467,7 +466,10 @@ module MiniMagick
     # Destroys the tempfile (created by {.open}) if it exists.
     #
     def destroy!
-      @tempfile.unlink if @tempfile
+      if @tempfile
+        FileUtils.rm_f @tempfile.path.sub(/mpc$/, "cache") if @tempfile.path.end_with?(".mpc")
+        @tempfile.unlink
+      end
     end
 
     ##
