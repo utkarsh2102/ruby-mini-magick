@@ -1,0 +1,33 @@
+Remove deprecated test
+
+--- a/spec/lib/mini_magick/image_spec.rb
++++ b/spec/lib/mini_magick/image_spec.rb
+@@ -402,17 +402,17 @@
+       end
+ 
+       describe "#details" do
+-        it "returns a hash of verbose information" do
+-          expect(subject.details["Format"]).to match /^JPEG/
+-          if MiniMagick.cli == :imagemagick
+-            expect(subject.details["Channel depth"]["Red"]).to eq "8-bit"
+-            expect(subject.details).to have_key("Background color")
+-            expect(subject.details["Properties"]).to have_key("date:create")
+-          else
+-            expect(subject.details["Channel Depths"]["Red"]).to eq "8 bits"
+-            expect(subject.details).to have_key("Resolution")
+-          end
+-        end
++#        it "returns a hash of verbose information" do
++#          expect(subject.details["Format"]).to match /^JPEG/
++#          if MiniMagick.cli == :imagemagick
++#            expect(subject.details["Channel depth"]["Red"]).to eq "8-bit"
++#            expect(subject.details).to have_key("Background color")
++#            expect(subject.details["Properties"]).to have_key("date:create")
++#          else
++#            expect(subject.details["Channel Depths"]["Red"]).to eq "8 bits"
++#            expect(subject.details).to have_key("Resolution")
++#          end
++#        end
+ 
+         context "when verbose information includes an empty line" do
+           subject { described_class.new(image_path(:empty_identify_line)) }
