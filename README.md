@@ -149,11 +149,80 @@ image["%[gamma]"] # "0.9"
 ```
 
 To get the all information about the image, MiniMagick gives you a handy method
-(which just converts the output from `identify -verbose` into a Hash):
+which returns the output from `identify -verbose` in hash format:
 
 ```ruby
-image.details #=> {"Format" => "JPEG", "Mime type" => "image/jpeg", "Resolution" => "300x300", ...}
+image.data #=>
+# {
+#   "format": "JPEG",
+#   "mimeType": "image/jpeg",
+#   "class": "DirectClass",
+#   "geometry": {
+#     "width": 200,
+#     "height": 276,
+#     "x": 0,
+#     "y": 0
+#   },
+#   "resolution": {
+#     "x": "300",
+#     "y": "300"
+#   },
+#   "colorspace": "sRGB",
+#   "channelDepth": {
+#     "red": 8,
+#     "green": 8,
+#     "blue": 8
+#   },
+#   "quality": 92,
+#   "properties": {
+#     "date:create": "2016-07-11T19:17:53+08:00",
+#     "date:modify": "2016-07-11T19:17:53+08:00",
+#     "exif:ColorSpace": "1",
+#     "exif:ExifImageLength": "276",
+#     "exif:ExifImageWidth": "200",
+#     "exif:ExifOffset": "90",
+#     "exif:Orientation": "1",
+#     "exif:ResolutionUnit": "2",
+#     "exif:XResolution": "300/1",
+#     "exif:YResolution": "300/1",
+#     "icc:copyright": "Copyright (c) 1998 Hewlett-Packard Company",
+#     "icc:description": "sRGB IEC61966-2.1",
+#     "icc:manufacturer": "IEC http://www.iec.ch",
+#     "icc:model": "IEC 61966-2.1 Default RGB colour space - sRGB",
+#     "jpeg:colorspace": "2",
+#     "jpeg:sampling-factor": "1x1,1x1,1x1",
+#     "signature": "1b2336f023e5be4a9f357848df9803527afacd4987ecc18c4295a272403e52c1"
+#   },
+#   ...
+# }
 ```
+
+Note that `MiniMagick::Image#data` is supported only on ImageMagick 6.8.8-3 or
+above, for GraphicsMagick or older versions of ImageMagick use
+`MiniMagick::Image#details`.
+
+### Pixels
+
+With MiniMagick you can retrieve a matrix of image pixels, where each member of
+the matrix is a 3-element array of numbers between 0-255, one for each range of
+the RGB color channels.
+
+```rb
+image = MiniMagick::Image.open("image.jpg")
+pixels = image.get_pixels
+pixels[3][2][1] # the green channel value from the 4th-row, 3rd-column pixel
+```
+
+It can also be called after applying transformations:
+
+```rb
+image = MiniMagick::Image.open("image.jpg")
+image.crop "20x30+10+5"
+image.colorspace "Gray"
+pixels = image.get_pixels
+```
+
+In this example, the returned pixels should now have equal R, G, and B values.
 
 ### Configuration
 
@@ -371,15 +440,26 @@ end
 convert wand.gif \( wand.gif -rotate 90 \) images.gif
 ```
 
-#### Passing STDIN
+#### STDIN and STDOUT
 
 If you want to pass something to standard input, you can pass the `:stdin`
 option to `#call`:
 
 ```ruby
 identify = MiniMagick::Tool::Identify.new
-identify.stdin # alias for `identify << "-"`
+identify.stdin # alias for "-"
 identify.call(stdin: image_content)
+```
+
+MiniMagick also has `#stdout` alias for "-" for outputing file contents to
+standard output:
+
+```ruby
+content = MiniMagick::Tool::Convert.new do |convert|
+  convert << "input.jpg"
+  convert.auto_orient
+  convert.stdout # alias for "-"
+end
 ```
 
 #### Capturing STDERR
@@ -396,6 +476,19 @@ compare.call do |stdout, stderr, status|
   # ...
 end
 ```
+
+## Limiting resources
+
+ImageMagick supports a number of environment variables for controlling its
+resource limits. For example, you can enforce memory or execution time limits by
+setting the following variables in your application's process environment:
+
+* `MAGICK_MEMORY_LIMIT=128MiB`
+* `MAGICK_MAP_LIMIT=64MiB`
+* `MAGICK_TIME_LIMIT=30`
+
+For a full list of variables and description, see [ImageMagick's resources
+documentation](http://www.imagemagick.org/script/resources.php).
 
 ## Troubleshooting
 

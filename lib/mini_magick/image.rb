@@ -86,6 +86,8 @@ module MiniMagick
           File.extname(URI(path_or_url).path)
         end
 
+      ext.sub!(/:.*/, '') # hack for filenames or URLs that include a colon
+
       Kernel.open(path_or_url, "rb") do |file|
         read(file, ext)
       end
@@ -145,23 +147,22 @@ module MiniMagick
     # is, it gets *modified*. You can either copy it yourself or use {.open}
     # which creates a temporary file for you and protects your original.
     #
-    # @param input_path [String] The location of an image file
+    # @param input_path [String, Pathname] The location of an image file
     # @yield [MiniMagick::Tool::Mogrify] If block is given, {#combine_options}
     #   is called.
     #
     def initialize(input_path, tempfile = nil, &block)
-      @path = input_path
+      @path = input_path.to_s
       @tempfile = tempfile
       @info = MiniMagick::Image::Info.new(@path)
 
       combine_options(&block) if block
     end
 
-    def eql?(other)
-      self.class.equal?(other.class) &&
-        signature == other.signature
+    def ==(other)
+      self.class == other.class && signature == other.signature
     end
-    alias == eql?
+    alias eql? ==
 
     def hash
       signature.hash
@@ -269,7 +270,14 @@ module MiniMagick
     #
     attribute :signature
     ##
-    # Returns the information from `identify -verbose` in a Hash format.
+    # Returns the information from `identify -verbose` in a Hash format, for
+    # ImageMagick.
+    #
+    # @return [Hash]
+    attribute :data
+    ##
+    # Returns the information from `identify -verbose` in a Hash format, for
+    # GraphicsMagick.
     #
     # @return [Hash]
     attribute :details
@@ -311,6 +319,47 @@ module MiniMagick
     alias frames layers
 
     ##
+    # Returns a matrix of pixels from the image. The matrix is constructed as
+    # an array (1) of arrays (2) of arrays (3) of unsigned integers:
+    #
+    # 1) one for each row of pixels
+    # 2) one for each column of pixels
+    # 3) three elements in the range 0-255, one for each of the RGB color channels
+    #
+    # @example
+    #   img = MiniMagick::Image.open 'image.jpg'
+    #   pixels = img.get_pixels
+    #   pixels[3][2][1] # the green channel value from the 4th-row, 3rd-column pixel
+    #
+    # It can also be called after applying transformations:
+    #
+    # @example
+    #   img = MiniMagick::Image.open 'image.jpg'
+    #   img.crop '20x30+10+5'
+    #   img.colorspace 'Gray'
+    #   pixels = img.get_pixels
+    #
+    # In this example, all pixels in pix should now have equal R, G, and B values.
+    #
+    # @return [Array] Matrix of each color of each pixel
+    def get_pixels
+      output = MiniMagick::Tool::Convert.new do |convert|
+        convert << path
+        convert.depth(8)
+        convert << "RGB:-"
+      end
+
+      pixels_array = output.unpack("C*")
+      pixels = pixels_array.each_slice(3).each_slice(width).to_a
+
+      # deallocate large intermediary objects
+      output.clear
+      pixels_array.clear
+
+      pixels
+    end
+
+    ##
     # This is used to change the format of the image. That is, from "tiff to
     # jpg" or something like that. Once you run it, the instance is pointing to
     # a new file with a new extension!
@@ -331,11 +380,13 @@ module MiniMagick
     # @param page [Integer] If this is an animated gif, say which 'page' you
     #   want with an integer. Default 0 will convert only the first page; 'nil'
     #   will convert all pages.
+    # @param read_opts [Hash] Any read options to be passed to ImageMagick
+    #   for example: image.format('jpg', page, {density: '300'})
     # @yield [MiniMagick::Tool::Convert] It optionally yields the command,
     #   if you want to add something.
     # @return [self]
     #
-    def format(format, page = 0)
+    def format(format, page = 0, read_opts={})
       if @tempfile
         new_tempfile = MiniMagick::Utilities.tempfile(".#{format}")
         new_path = new_tempfile.path
@@ -347,6 +398,9 @@ module MiniMagick
       input_path << "[#{page}]" if page && !layer?
 
       MiniMagick::Tool::Convert.new do |convert|
+        read_opts.each do |opt, val|
+          convert.send(opt.to_s, val)
+        end
         convert << input_path
         yield convert if block_given?
         convert << new_path
@@ -501,13 +555,7 @@ module MiniMagick
     end
 
     def mogrify(page = nil)
-      MiniMagick::Tool::Mogrify.new do |builder|
-        builder.instance_eval do
-          def format(*args)
-            fail NoMethodError,
-              "you must call #format on a MiniMagick::Image directly"
-          end
-        end
+      MiniMagick::Tool::MogrifyRestricted.new do |builder|
         yield builder if block_given?
         builder << (page ? "#{path}[#{page}]" : path)
       end
@@ -520,6 +568,5 @@ module MiniMagick
     def layer?
       path =~ /\[\d+\]$/
     end
-
   end
 end

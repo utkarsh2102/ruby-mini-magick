@@ -6,6 +6,7 @@ module Helpers
       File.join("spec/fixtures",
         case type
         when :default, :jpg       then "default.jpg"
+        when :png                 then "engine.png"  
         when :animation, :gif     then "animation.gif"
         when :exif                then "exif.jpg"
         when :empty_identify_line then "empty_identify_line.png"
@@ -13,6 +14,8 @@ module Helpers
         when :not                 then "not_an_image.rb"
         when :colon               then "with:colon.jpg"
         when :clipping_path       then "clipping_path.jpg"
+        when :rgb                 then "rgb.png"
+        when :rgb_tmp             then "rgb_tmp.png"
         else
           fail "image #{type.inspect} doesn't exist"
         end
@@ -22,10 +25,6 @@ module Helpers
       FileUtils.cp image_path, path
       path
     end
-  end
-
-  def image_url
-    "https://avatars2.githubusercontent.com/u/795488?v=2&s=40"
   end
 
   def random_path(basename = "")
