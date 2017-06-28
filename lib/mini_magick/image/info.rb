@@ -1,3 +1,5 @@
+require "json"
+
 module MiniMagick
   class Image
     # @private
@@ -27,6 +29,8 @@ module MiniMagick
           exif
         when "details"
           details
+        when "data"
+          data
         else
           raw(value)
         end
@@ -80,16 +84,29 @@ module MiniMagick
 
       def exif
         @info["exif"] ||= (
+          hash = {}
           output = self["%[EXIF:*]"]
-          pairs = output.gsub(/^exif:/, "").split("\n").map { |line| line.split("=") }
-          Hash[pairs].tap do |hash|
-            ASCII_ENCODED_EXIF_KEYS.each do |key|
-              next unless hash.has_key?(key)
 
-              value = hash[key]
-              hash[key] = decode_comma_separated_ascii_characters(value)
+          output.each_line do |line|
+            line = line.chomp("\n")
+
+            case MiniMagick.cli
+            when :imagemagick
+              if match = line.match(/^exif:/)
+                key, value = match.post_match.split("=", 2)
+                value = decode_comma_separated_ascii_characters(value) if ASCII_ENCODED_EXIF_KEYS.include?(key)
+                hash[key] = value
+              else
+                hash[hash.keys.last] << "\n#{line}"
+              end
+            when :graphicsmagick
+              key, value = line.split("=", 2)
+              value.gsub!("\\012", "\n") # convert "\012" characters to newlines
+              hash[key] = value
             end
           end
+
+          hash
         )
       end
 
@@ -102,6 +119,8 @@ module MiniMagick
       end
 
       def details
+        warn "[MiniMagick] MiniMagick::Image#details has been deprecated, as it was causing too many parsing errors. You should use MiniMagick::Image#data instead, which differs in a way that the keys are in camelcase." if MiniMagick.imagemagick?
+
         @info["details"] ||= (
           details_string = identify(&:verbose)
           key_stack = []
@@ -132,19 +151,39 @@ module MiniMagick
         )
       end
 
-      def identify
-        path = @path
-        path += "[0]" unless path =~ /\[\d+\]$/
+      def data
+        raise Error, "MiniMagick::Image#data isn't supported on GraphicsMagick. Use MiniMagick::Image#details instead." if MiniMagick.graphicsmagick?
 
+        @info["data"] ||= (
+          json = MiniMagick::Tool::Convert.new do |convert|
+            convert << path
+            convert << "json:"
+          end
+
+          data = JSON.parse(json)
+          data = data.fetch(0) if data.is_a?(Array)
+          data.fetch("image")
+        )
+      end
+
+      def identify
         MiniMagick::Tool::Identify.new do |builder|
           yield builder if block_given?
           builder << path
         end
       end
 
+      private
+
       def decode_comma_separated_ascii_characters(encoded_value)
         return encoded_value unless encoded_value.include?(',')
         encoded_value.scan(/\d+/).map(&:to_i).map(&:chr).join
+      end
+
+      def path
+        value = @path
+        value += "[0]" unless value =~ /\[\d+\]$/
+        value
       end
 
     end

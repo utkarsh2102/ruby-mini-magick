@@ -3,6 +3,7 @@ require "pathname"
 require "tempfile"
 require "fileutils"
 require "stringio"
+require "webmock/rspec"
 
 ["ImageMagick", "GraphicsMagick"].each do |cli|
   RSpec.context "With #{cli}", cli: cli.downcase.to_sym do
@@ -59,6 +60,7 @@ require "stringio"
           image = described_class.open(image_path)
           expect(image.path).not_to eq image_path
           expect(image).to be_valid
+          expect(File.extname(image.path)).to eq File.extname(image_path)
         end
 
         it "accepts a Pathname" do
@@ -67,11 +69,16 @@ require "stringio"
         end
 
         it "loads a remote image" do
-          begin
-            image = described_class.open(image_url)
-            expect(image).to be_valid
-          rescue SocketError
-          end
+          stub_request(:get, "http://example.com/image.jpg").to_return(body: File.read(image_path))
+          image = described_class.open("http://example.com/image.jpg")
+          expect(image).to be_valid
+          expect(File.extname(image.path)).to eq ".jpg"
+        end
+
+        it "strips out colons from URL" do
+          stub_request(:get, "http://example.com/image.jpg:large").to_return(body: File.read(image_path))
+          image = described_class.open("http://example.com/image.jpg:large")
+          expect(File.extname(image.path)).to eq ".jpg"
         end
 
         it "validates the image" do
@@ -114,6 +121,11 @@ require "stringio"
         it "initializes a new image" do
           image = described_class.new(image_path)
           expect(image).to be_valid
+        end
+
+        it "accepts a Pathname" do
+          image = described_class.new(Pathname(image_path))
+          expect(image.path).to be_a(String)
         end
 
         it "accepts a block which it passes on to #combine_options" do
@@ -252,6 +264,14 @@ require "stringio"
         it "returns self" do
           expect(subject.format('png')).to eq subject
         end
+
+        it "reads read_opts from passed arguments" do
+          subject = described_class.open(image_path(:animation))
+          layer = subject.layers.first
+          layer.format('jpg', nil, {density: '300'})
+          expect(layer).to be_valid
+
+        end
       end
 
       describe "#write" do
@@ -300,18 +320,18 @@ require "stringio"
 
       describe "#[]" do
         it "inspects image meta info" do
-          expect(subject[:width]).to be_a(Fixnum)
-          expect(subject[:height]).to be_a(Fixnum)
-          expect(subject[:dimensions]).to all(be_a(Fixnum))
+          expect(subject[:width]).to be_a(Integer)
+          expect(subject[:height]).to be_a(Integer)
+          expect(subject[:dimensions]).to all(be_a(Integer))
           expect(subject[:colorspace]).to be_a(String)
           expect(subject[:format]).to match(/[A-Z]/)
           expect(subject[:signature]).to match(/[[:alnum:]]{64}/)
         end
 
         it "supports string keys" do
-          expect(subject["width"]).to be_a(Fixnum)
-          expect(subject["height"]).to be_a(Fixnum)
-          expect(subject["dimensions"]).to all(be_a(Fixnum))
+          expect(subject["width"]).to be_a(Integer)
+          expect(subject["height"]).to be_a(Integer)
+          expect(subject["dimensions"]).to all(be_a(Integer))
           expect(subject["colorspace"]).to be_a(String)
           expect(subject["format"]).to match(/[A-Z]/)
           expect(subject['signature']).to match(/[[:alnum:]]{64}/)
@@ -319,12 +339,7 @@ require "stringio"
 
         it "reads exif" do
           subject = described_class.new(image_path(:exif))
-          gps_latitude = subject.exif["GPSLatitude"].split(/\s*,\s*/)
-          gps_longitude = subject.exif["GPSLongitude"].split(/\s*,\s*/)
-
-          expect(subject["EXIF:ColorSpace"]).to eq "1"
-          expect(gps_latitude.size).to eq 3
-          expect(gps_longitude.size).to eq 3
+          expect(subject["EXIF:Flash"]).to eq "0"
         end
 
         it "passes unknown values directly to -format" do
@@ -335,13 +350,13 @@ require "stringio"
       it "has attributes" do
         expect(subject.type).to match(/^[A-Z]+$/)
         expect(subject.mime_type).to match(/^image\/[a-z]+$/)
-        expect(subject.width).to be_a(Fixnum).and be_nonzero
-        expect(subject.height).to be_a(Fixnum).and be_nonzero
-        expect(subject.dimensions).to all(be_a(Fixnum))
+        expect(subject.width).to be_a(Integer).and be_nonzero
+        expect(subject.height).to be_a(Integer).and be_nonzero
+        expect(subject.dimensions).to all(be_a(Integer))
         expect(subject.size).to be_a(Integer).and be_nonzero
         expect(subject.human_size).to be_a(String).and be_nonempty
         expect(subject.colorspace).to be_a(String)
-        expect(subject.resolution).to all(be_a(Fixnum))
+        expect(subject.resolution).to all(be_a(Integer))
         expect(subject.signature).to match(/[[:alnum:]]{64}/)
       end
 
@@ -368,8 +383,8 @@ require "stringio"
         end
 
         it "decodes the ExifVersion" do
-          expect(subject.exif["ExifVersion"]).to eq("0221")
-        end
+          expect(subject.exif["ExifVersion"]).to eq("0220")
+        end unless ENV["CI"]
       end
 
       describe "#resolution" do
@@ -390,7 +405,7 @@ require "stringio"
         it "returns a hash of verbose information" do
           expect(subject.details["Format"]).to match /^JPEG/
           if MiniMagick.cli == :imagemagick
-            expect(subject.details["Channel depth"]["red"]).to eq "8-bit"
+            expect(subject.details["Channel depth"]["Red"]).to eq "8-bit"
             expect(subject.details).to have_key("Background color")
             expect(subject.details["Properties"]).to have_key("date:create")
           else
@@ -401,6 +416,7 @@ require "stringio"
 
         context "when verbose information includes an empty line" do
           subject { described_class.new(image_path(:empty_identify_line)) }
+
           it "skips the empty line" do
             if MiniMagick.cli == :imagemagick
               expect(subject.details["Properties"]).to have_key("date:create")
@@ -410,18 +426,18 @@ require "stringio"
           end
         end
 
-        context "when verbose information includes a badly encoded line do",
-          skip_cli: :graphicsmagick do
+        context "when verbose information includes a badly encoded line do", skip_cli: :graphicsmagick do
           subject { described_class.new(image_path(:badly_encoded_line)) }
+
           it "skips the badly encoded line" do
             expect(subject.details).not_to have_key("Software")
           end
         end
 
         # GraphicsMagick does not output the clipping path
-        context "when verbose information includes a clipping path",
-          skip_cli: :graphicsmagick do
+        context "when verbose information includes a clipping path", skip_cli: :graphicsmagick do
           subject { described_class.new(image_path(:clipping_path)) }
+
           it "does not hang when parsing verbose data" do
             # Retrieving .details should happen very quickly but as of v4.3.6
             # will hang indefinitely without the timeout
@@ -431,6 +447,26 @@ require "stringio"
           end
         end
       end
+
+      describe "#data" do
+        describe "when the data return is not an array" do
+          subject { described_class.new(image_path(:jpg)) }
+
+          it "returns image JSON data", skip_cli: :graphicsmagick do
+            expect(subject.data["format"]).to eq "JPEG"
+            expect(subject.data["colorspace"]).to eq "sRGB"
+          end
+        end
+
+        describe "when the data return is an array (ex png)" do
+          subject { described_class.new(image_path(:png)) }
+
+          it "returns image JSON data", skip_cli: :graphicsmagick do
+            expect(subject.data["format"]).to eq "PNG"
+            expect(subject.data["colorspace"]).to eq "sRGB"
+          end
+        end
+      end unless ENV["CI"] # problems installing newer ImageMagick versions on CI
 
       describe "#layers" do
         it "returns a list of images" do
@@ -450,6 +486,80 @@ require "stringio"
           jpg = described_class.new(image_path(:jpg))
 
           expect(jpg.layers.count).to eq 1
+        end
+      end
+
+      describe "#get_pixels" do
+        let(:magenta) { [255,   0, 255] }
+        let(:gray)    { [128, 128, 128] }
+        let(:green)   { [  0, 255,   0] }
+        let(:cyan)    { [  0, 255, 255] }
+        let(:pix)     { subject.get_pixels }
+
+        subject { described_class.open(image_path(:rgb)) }
+
+        context "without modifications" do
+          it "returns a width-by-height matrix" do
+            pix.each do |row|
+              expect(row.length).to eq(subject.width)
+            end
+          end
+
+          it("returns a magenta pixel") { expect(pix[3][3]  ).to eq(magenta) }
+          it("returns a gray pixel")    { expect(pix[-4][-4]).to eq(gray)    }
+          it("returns a green pixel")   { expect(pix[3][-4] ).to eq(green)   }
+          it("returns a cyan pixel")    { expect(pix[-4][3] ).to eq(cyan)    }
+        end
+
+        context "after cropping" do
+          let(:cols)    { 10 }
+          let(:rows)    {  6 }
+
+          before { subject.crop "#{cols}x#{rows}+3+3" }
+
+          it "returns a matrix of the requested height" do
+            expect(pix.length).to eq(rows)
+          end
+
+          it "returns a matrix of the requested width" do
+            pix.each do |x|
+              expect(x.length).to eq(cols)
+            end
+          end
+
+          it("returns a magenta pixel") { expect(pix[0][0]  ).to eq(magenta)}
+          it("returns a gray pixel")    { expect(pix[-1][-1]).to eq(gray)   }
+          it("returns a cyan pixel")    { expect(pix[-1][0] ).to eq(cyan)   }
+          it("returns a green pixel")   { expect(pix[0][-1] ).to eq(green)  }
+        end
+
+        context "after resizing and desaturating" do
+          let(:cols) { 8 }
+          let(:rows) { 6 }
+
+          before {
+            subject.resize "50%"
+            subject.colorspace "Gray"
+          }
+
+          it "returns a matrix of the requested height" do
+            expect(pix.length).to eq(rows)
+          end
+
+          it "returns a matrix of the requested width" do
+            pix.each do |x|
+              expect(x.length).to eq(cols)
+            end
+          end
+
+          it "returns gray pixels" do
+            pix.each do |row|
+              row.each do |px|
+                expect(px[0]).to eq px[1]
+                expect(px[0]).to eq px[2]
+              end
+            end
+          end
         end
       end
 
