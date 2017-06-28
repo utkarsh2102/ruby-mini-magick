@@ -1,0 +1,16 @@
+Description: Fix quotes used in tests to match the actual output from imagemagick
+Author: Balasankar C <balasankarc@autistici.org>
+Last-Update: 2017-06-28
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/spec/lib/mini_magick/shell_spec.rb
++++ b/spec/lib/mini_magick/shell_spec.rb
+@@ -51,7 +51,7 @@
+           stdout, stderr, status = subject.execute(%W[identify foo])
+ 
+           expect(stdout).to eq ""
+-          expect(stderr).to match("unable to open image 'foo'")
++          expect(stderr).to match("unable to open image `foo'")
+           expect(status).to eq 1
+         end
+ 

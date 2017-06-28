@@ -1,4 +1,5 @@
 #remove-unsuported-rspec-features
+fix-quotes-in-tests.patch
 skip-tests-temporarily.patch
 remove-rubygems
 remove-deprecated-test.patch
