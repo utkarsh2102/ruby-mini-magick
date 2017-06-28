@@ -1,9 +1,10 @@
-ruby-mini-magick (4.7.2-1) UNRELEASED; urgency=medium
+ruby-mini-magick (4.7.2-1) unstable; urgency=medium
 
   * Team upload
   * New upstream release
+  * Enable autopkgtest
 
- -- Sruthi Chandran <srud@disroot.org>  Wed, 28 Jun 2017 14:06:42 +0530
+ -- Sruthi Chandran <srud@disroot.org>  Wed, 28 Jun 2017 17:31:44 +0530
 
 ruby-mini-magick (4.5.1-1) unstable; urgency=medium
 
