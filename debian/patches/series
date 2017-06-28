@@ -1,4 +1,3 @@
 #remove-unsuported-rspec-features
 skip-tests-temporarily.patch
 remove-rubygems
-remove-remote-tests
