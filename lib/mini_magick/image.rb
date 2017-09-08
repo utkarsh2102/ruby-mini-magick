@@ -76,9 +76,12 @@ module MiniMagick
     # @param path_or_url [String] Either a local file path or a URL that
     #   open-uri can read
     # @param ext [String] Specify the extension you want to read it as
+    # @param options [Hash] Specify options for the open method
     # @return [MiniMagick::Image] The loaded image
     #
-    def self.open(path_or_url, ext = nil)
+    def self.open(path_or_url, ext = nil, options = {})
+      options, ext = ext, nil if ext.is_a?(Hash)
+
       ext ||=
         if File.exist?(path_or_url)
           File.extname(path_or_url)
@@ -88,7 +91,7 @@ module MiniMagick
 
       ext.sub!(/:.*/, '') # hack for filenames or URLs that include a colon
 
-      Kernel.open(path_or_url, "rb") do |file|
+      Kernel.open(path_or_url, "rb", options) do |file|
         read(file, ext)
       end
     end
@@ -343,11 +346,14 @@ module MiniMagick
     #
     # @return [Array] Matrix of each color of each pixel
     def get_pixels
-      output = MiniMagick::Tool::Convert.new do |convert|
-        convert << path
-        convert.depth(8)
-        convert << "RGB:-"
-      end
+      convert = MiniMagick::Tool::Convert.new
+      convert << path
+      convert.depth(8)
+      convert << "RGB:-"
+
+      # Do not use `convert.call` here. We need the whole binary (unstripped) output here.
+      shell = MiniMagick::Shell.new
+      output, * = shell.run(convert.command)
 
       pixels_array = output.unpack("C*")
       pixels = pixels_array.each_slice(3).each_slice(width).to_a
