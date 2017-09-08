@@ -69,14 +69,24 @@ require "webmock/rspec"
         end
 
         it "loads a remote image" do
-          stub_request(:get, "http://example.com/image.jpg").to_return(body: File.read(image_path))
+          stub_request(:get, "http://example.com/image.jpg")
+            .to_return(body: File.read(image_path))
           image = described_class.open("http://example.com/image.jpg")
           expect(image).to be_valid
           expect(File.extname(image.path)).to eq ".jpg"
         end
 
+        it "accepts open-uri options" do
+          stub_request(:get, "http://example.com/image.jpg")
+            .with(headers: {"Foo" => "Bar"})
+            .to_return(body: File.read(image_path))
+          described_class.open("http://example.com/image.jpg", {"Foo" => "Bar"})
+          described_class.open("http://example.com/image.jpg", "jpg", {"Foo" => "Bar"})
+        end
+
         it "strips out colons from URL" do
-          stub_request(:get, "http://example.com/image.jpg:large").to_return(body: File.read(image_path))
+          stub_request(:get, "http://example.com/image.jpg:large")
+            .to_return(body: File.read(image_path))
           image = described_class.open("http://example.com/image.jpg:large")
           expect(File.extname(image.path)).to eq ".jpg"
         end
@@ -557,6 +567,18 @@ require "webmock/rspec"
               row.each do |px|
                 expect(px[0]).to eq px[1]
                 expect(px[0]).to eq px[2]
+              end
+            end
+          end
+        end
+
+        context "when first or last byte could be interpreted as control characters" do
+          subject { described_class.open(image_path(:get_pixels)) }
+
+          it "returns a matrix where all pixel has 3 values" do
+            pix.each do |row|
+              row.each do |px|
+                expect(px.length).to eq(3)
               end
             end
           end
