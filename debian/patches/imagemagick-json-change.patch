@@ -4,6 +4,7 @@ Date: Tue, 23 Jan 2018 12:45:18 -0600
 Description: correctly convert NaN values for JSON output
 Bug: https://github.com/minimagick/minimagick/issues/434
 Bug-Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=892189
+Origin: https://github.com/MadeInSyria/minimagick/commit/a3a92ed31bc750901078b3a4e93c1b1c8b7ff6dd
 
 ---
  lib/mini_magick/image/info.rb | 6 +++---
