@@ -15,8 +15,8 @@ Build-Depends: debhelper (>= 9~),
                ruby-rspec (>= 3.1~),
                ruby-webmock
 Standards-Version: 4.1.0
-Vcs-Git: https://anonscm.debian.org/git/pkg-ruby-extras/ruby-mini-magick.git
-Vcs-Browser: https://anonscm.debian.org/cgit/pkg-ruby-extras/ruby-mini-magick.git
+Vcs-Git: https://salsa.debian.org/ruby-team/ruby-mini-magick.git
+Vcs-Browser: https://salsa.debian.org/ruby-team/ruby-mini-magick
 Homepage: https://github.com/minimagick/minimagick
 Testsuite: autopkgtest-pkg-ruby
 XS-Ruby-Versions: all
