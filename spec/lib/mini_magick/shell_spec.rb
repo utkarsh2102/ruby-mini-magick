@@ -51,7 +51,7 @@ RSpec.describe MiniMagick::Shell do
           stdout, stderr, status = subject.execute(%W[identify foo])
 
           expect(stdout).to eq ""
-          expect(stderr).to match("unable to open image 'foo'")
+          expect(stderr).to match("unable to open image")
           expect(status).to eq 1
         end
 
@@ -77,7 +77,7 @@ RSpec.describe MiniMagick::Shell do
 
         it "terminate long running commands if MiniMagick.timeout is set" do
           MiniMagick.timeout = 0.1
-          expect { subject.execute(%w[sleep 0.2]) }.to raise_error(Timeout::Error)
+          expect { subject.execute(%w[sleep 1]) }.to raise_error(Timeout::Error)
           MiniMagick.timeout = nil
         end
 

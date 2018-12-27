@@ -1,5 +1,6 @@
 # MiniMagick
-
+[![Gem Version](https://img.shields.io/gem/v/mini_magick.svg)](http://rubygems.org/gems/mini_magick)
+[![Gem Downloads](https://img.shields.io/gem/dt/mini_magick.svg)](http://rubygems.org/gems/mini_magick)
 [![Build Status](https://travis-ci.org/minimagick/minimagick.svg?branch=master)](http://travis-ci.org/minimagick/minimagick)
 [![Code Climate](https://codeclimate.com/github/minimagick/minimagick/badges/gpa.svg)](https://codeclimate.com/github/minimagick/minimagick)
 
@@ -43,14 +44,14 @@ MiniMagick has been tested on following Rubies:
 * MRI 2.1
 * MRI 2.2
 * MRI 2.3
-* Rubinius
-* JRuby (1.7.18 and later)
+* MRI 2.4
+* JRuby 9k
 
 ## Installation
 
 Add the gem to your Gemfile:
 
-```ruby
+```rb
 gem "mini_magick"
 ```
 
@@ -62,7 +63,9 @@ gem "mini_magick"
 
 Let's first see a basic example of resizing an image.
 
-```ruby
+```rb
+require "mini_magick"
+
 image = MiniMagick::Image.open("input.jpg")
 image.path #=> "/var/folders/k7/6zx6dx6x7ys3rv3srh0nyfj00000gn/T/magick20140921-75881-1yho3zc.jpg"
 image.resize "100x100"
@@ -80,7 +83,7 @@ to the image.
 `MiniMagick::Image.open` also accepts URLs, and options passed in will be
 forwarded to open-uri.
 
-```ruby
+```rb
 image = MiniMagick::Image.open("http://example.com/image.jpg")
 image.contrast
 image.write("from_internets.jpg")
@@ -89,7 +92,7 @@ image.write("from_internets.jpg")
 On the other hand, if we want the original image to actually *get* modified,
 we can use `MiniMagick::Image.new`.
 
-```ruby
+```rb
 image = MiniMagick::Image.new("input.jpg")
 image.path #=> "input.jpg"
 image.resize "100x100"
@@ -103,7 +106,7 @@ methods in this way, it quickly becomes inefficient, because it calls the
 command on each methods call. `MiniMagick::Image#combine_options` takes
 multiple options and from them builds one single command.
 
-```ruby
+```rb
 image.combine_options do |b|
   b.resize "250x200>"
   b.rotate "-90"
@@ -114,7 +117,7 @@ end # the command gets executed
 As a handy shortcut, `MiniMagick::Image.new` also accepts an optional block
 which is used to `combine_options`.
 
-```ruby
+```rb
 image = MiniMagick::Image.new("input.jpg") do |b|
   b.resize "250x200>"
   b.rotate "-90"
@@ -129,7 +132,7 @@ about its interface, see [Metal](#metal) below.
 
 A `MiniMagick::Image` has various handy attributes.
 
-```ruby
+```rb
 image.type        #=> "JPEG"
 image.mime_type   #=> "image/jpeg"
 image.width       #=> 250
@@ -145,14 +148,14 @@ image.signature   #=> "60a7848c4ca6e36b8e2c5dea632ecdc29e9637791d2c59ebf7a54c0c6
 If you need more control, you can also access [raw image
 attributes](http://www.imagemagick.org/script/escape.php):
 
-```ruby
+```rb
 image["%[gamma]"] # "0.9"
 ```
 
 To get the all information about the image, MiniMagick gives you a handy method
 which returns the output from `identify -verbose` in hash format:
 
-```ruby
+```rb
 image.data #=>
 # {
 #   "format": "JPEG",
@@ -227,7 +230,7 @@ In this example, the returned pixels should now have equal R, G, and B values.
 
 ### Configuration
 
-```ruby
+```rb
 MiniMagick.configure do |config|
   config.cli = :graphicsmagick
   config.timeout = 5
@@ -242,7 +245,7 @@ For a complete list of configuration options, see
 MiniMagick also allows you to
 [composite](http://www.imagemagick.org/script/composite.php) images:
 
-```ruby
+```rb
 first_image  = MiniMagick::Image.new("first.jpg")
 second_image = MiniMagick::Image.new("second.jpg")
 result = first_image.composite(second_image) do |c|
@@ -274,7 +277,7 @@ them valid. This adds slight overhead to the whole processing. Sometimes it's
 safe to assume that all input and output images are valid by default and turn
 off validation:
 
-```ruby
+```rb
 MiniMagick.configure do |config|
   config.validate_on_create = false
   config.validate_on_write = false
@@ -283,7 +286,7 @@ end
 
 You can test whether an image is valid:
 
-```ruby
+```rb
 image.valid?
 image.validate! # raises MiniMagick::Invalid if image is invalid
 ```
@@ -292,7 +295,7 @@ image.validate! # raises MiniMagick::Invalid if image is invalid
 
 You can choose to log MiniMagick commands and their execution times:
 
-```ruby
+```rb
 MiniMagick.logger.level = Logger::DEBUG
 ```
 ```
@@ -308,15 +311,13 @@ specify it in configuration:
 
 ```rb
 MiniMagick.configure do |config|
-  config.cli = :graphicsmagick
+  config.cli = :graphicsmagick # or :imagemagick or :imagemagick7
 end
 ```
 
-If you're a real ImageMagick guru, you might want to use GraphicsMagick only
-for certain processing blocks (because it's more efficient), or vice versa. You
-can accomplish this with `.with_cli`:
+You can also use `.with_cli` to temporary switch the CLI:
 
-```ruby
+```rb
 MiniMagick.with_cli(:graphicsmagick) do
   # Some processing that GraphicsMagick is better at
 end
@@ -332,24 +333,31 @@ process will also have their CLI changed, which could lead to race conditions.
 If you want to be close to the metal, you can use ImageMagick's command-line
 tools directly.
 
-```ruby
-MiniMagick::Tool::Mogrify.new do |mogrify|
-  mogrify.resize("100x100")
-  mogrify.negate
-  mogrify << "image.jpg"
-end #=> `mogrify -resize 100x100 -negate image.jpg`
+```rb
+MiniMagick::Tool::Magick.new do |magick|
+  magick << "input.jpg"
+  magick.resize("100x100")
+  magick.negate
+  magick << "output.jpg"
+end #=> `magick input.jpg -resize 100x100 -negate output.jpg`
 
 # OR
 
-mogrify = MiniMagick::Tool::Mogrify.new
-mogrify.resize("100x100")
-mogrify.negate
-mogrify << "image.jpg"
-mogrify.call #=> `mogrify -resize 100x100 -negate image.jpg`
+convert = MiniMagick::Tool::Convert.new
+convert << "input.jpg"
+convert.resize("100x100")
+convert.negate
+convert << "output.jpg"
+convert.call #=> `convert input.jpg -resize 100x100 -negate output.jpg`
 ```
 
+If you're on ImageMagick 7, you should probably use `MiniMagick::Tool::Magick`,
+though the legacy `MiniMagick::Tool::Convert` and friends will work too. On
+ImageMagick 6 `MiniMagick::Tool::Magick` won't be available, so you should
+instead use `MiniMagick::Tool::Convert` and friends.
+
 This way of using MiniMagick is highly recommended if you want to maximize
-performance of your image processing. Here are some of the features.
+performance of your image processing. We will now show the features available.
 
 #### Appending
 
@@ -366,7 +374,7 @@ end
 Note that it is important that every command you would pass to the command line
 has to be separated with `<<`, e.g.:
 
-```ruby
+```rb
 # GOOD
 convert << "-resize" << "500x500"
 
@@ -377,7 +385,7 @@ convert << "-resize 500x500"
 Shell escaping is also handled for you. If an option has a value that has
 spaces inside it, just pass it as a regular string.
 
-```ruby
+```rb
 convert << "-distort"
 convert << "Perspective"
 convert << "0,0,0,0 0,45,0,45 69,0,60,10 69,45,60,35"
@@ -390,7 +398,7 @@ convert -distort Perspective '0,0,0,0 0,45,0,45 69,0,60,10 69,45,60,35'
 
 Instead of passing in options directly, you can use Ruby methods:
 
-```ruby
+```rb
 convert.resize("500x500")
 convert.rotate(90)
 convert.distort("Perspective", "0,0,0,0 0,45,0,45 69,0,60,10 69,45,60,35")
@@ -403,7 +411,7 @@ MiniMagick knows which options each tool has, so you will get an explicit
 
 Every method call returns `self`, so you can chain them to create logical groups.
 
-```ruby
+```rb
 MiniMagick::Tool::Convert.new do |convert|
   convert << "input.jpg"
   convert.clone(0).background('gray').shadow('80x5+5+5')
@@ -414,7 +422,7 @@ end
 
 #### "Plus" options
 
-```ruby
+```rb
 MiniMagick::Tool::Convert.new do |convert|
   convert << "input.jpg"
   convert.repage.+
@@ -427,7 +435,7 @@ convert input.jpg +repage +distort Perspective 'more args'
 
 #### Stacks
 
-```ruby
+```rb
 MiniMagick::Tool::Convert.new do |convert|
   convert << "wand.gif"
   convert.stack do |stack|
@@ -446,7 +454,7 @@ convert wand.gif \( wand.gif -rotate 90 \) images.gif
 If you want to pass something to standard input, you can pass the `:stdin`
 option to `#call`:
 
-```ruby
+```rb
 identify = MiniMagick::Tool::Identify.new
 identify.stdin # alias for "-"
 identify.call(stdin: image_content)
@@ -455,7 +463,7 @@ identify.call(stdin: image_content)
 MiniMagick also has `#stdout` alias for "-" for outputing file contents to
 standard output:
 
-```ruby
+```rb
 content = MiniMagick::Tool::Convert.new do |convert|
   convert << "input.jpg"
   convert.auto_orient
@@ -489,7 +497,7 @@ setting the following variables in your application's process environment:
 * `MAGICK_TIME_LIMIT=30`
 
 For a full list of variables and description, see [ImageMagick's resources
-documentation](http://www.imagemagick.org/script/resources.php).
+documentation](http://www.imagemagick.org/script/resources.php#environment).
 
 ## Troubleshooting
 

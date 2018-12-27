@@ -15,10 +15,8 @@ module MiniMagick
   #
   class Tool
 
-    CREATION_OPERATORS = %w[
-      xc canvas logo rose gradient radial-gradient plasma pattern label caption
-      text
-    ]
+    CREATION_OPERATORS = %w[xc canvas logo rose gradient radial-gradient plasma
+                            pattern text pango]
 
     ##
     # Aside from classic instantiation, it also accepts a block, and then
@@ -112,7 +110,8 @@ module MiniMagick
 
     ##
     # The executable used for this tool. Respects
-    # {MiniMagick::Configuration#cli} and {MiniMagick::Configuration#cli_path}.
+    # {MiniMagick::Configuration#cli}, {MiniMagick::Configuration#cli_path},
+    # and {MiniMagick::Configuration#cli_prefix}.
     #
     # @return [Array<String>]
     #
@@ -121,10 +120,20 @@ module MiniMagick
     #   identify = MiniMagick::Tool::Identify.new
     #   identify.executable #=> ["gm", "identify"]
     #
+    # @example
+    #   MiniMagick.configure do |config|
+    #     config.cli = :graphicsmagick
+    #     config.cli_prefix = ['firejail', '--force']
+    #   end
+    #   identify = MiniMagick::Tool::Identify.new
+    #   identify.executable #=> ["firejail", "--force", "gm", "identify"]
+    #
     def executable
       exe = [name]
+      exe.unshift "magick" if MiniMagick.imagemagick7? && name != "magick"
       exe.unshift "gm" if MiniMagick.graphicsmagick?
       exe.unshift File.join(MiniMagick.cli_path, exe.shift) if MiniMagick.cli_path
+      Array(MiniMagick.cli_prefix).reverse_each { |p| exe.unshift p } if MiniMagick.cli_prefix
       exe
     end
 
@@ -285,6 +294,7 @@ require "mini_magick/tool/convert"
 require "mini_magick/tool/display"
 require "mini_magick/tool/identify"
 require "mini_magick/tool/import"
+require "mini_magick/tool/magick"
 require "mini_magick/tool/mogrify"
 require "mini_magick/tool/mogrify_restricted"
 require "mini_magick/tool/montage"
