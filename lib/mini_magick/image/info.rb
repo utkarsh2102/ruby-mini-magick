@@ -91,7 +91,7 @@ module MiniMagick
             line = line.chomp("\n")
 
             case MiniMagick.cli
-            when :imagemagick
+            when :imagemagick, :imagemagick7
               if match = line.match(/^exif:/)
                 key, value = match.post_match.split("=", 2)
                 value = decode_comma_separated_ascii_characters(value) if ASCII_ENCODED_EXIF_KEYS.include?(key)
@@ -100,6 +100,7 @@ module MiniMagick
                 hash[hash.keys.last] << "\n#{line}"
               end
             when :graphicsmagick
+              next if line == "unknown"
               key, value = line.split("=", 2)
               value.gsub!("\\012", "\n") # convert "\012" characters to newlines
               hash[key] = value
@@ -119,7 +120,7 @@ module MiniMagick
       end
 
       def details
-        warn "[MiniMagick] MiniMagick::Image#details has been deprecated, as it was causing too many parsing errors. You should use MiniMagick::Image#data instead, which differs in a way that the keys are in camelcase." if MiniMagick.imagemagick?
+        warn "[MiniMagick] MiniMagick::Image#details has been deprecated, as it was causing too many parsing errors. You should use MiniMagick::Image#data instead, which differs in a way that the keys are in camelcase." if MiniMagick.imagemagick? || MiniMagick.imagemagick7?
 
         @info["details"] ||= (
           details_string = identify(&:verbose)
@@ -139,8 +140,8 @@ module MiniMagick
               next
             end
 
-            key, _, value = line.partition(/:[\s\n]/).map(&:strip)
-            hash = key_stack.inject(details_hash) { |hash, key| hash.fetch(key) }
+            key, _, value = line.partition(/:[\s]/).map(&:strip)
+            hash = key_stack.inject(details_hash) { |h, k| h.fetch(k) }
             if value.empty?
               hash[key] = {}
               key_stack.push key

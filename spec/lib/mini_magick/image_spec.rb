@@ -386,15 +386,20 @@ require "webmock/rspec"
       end
 
       describe "#exif" do
-        subject { described_class.new(image_path(:exif)) }
-
         it "returns a hash of EXIF data" do
+          subject = described_class.new(image_path(:exif))
           expect(subject.exif["DateTimeOriginal"]).to be_a(String)
         end
 
         it "decodes the ExifVersion" do
+          subject = described_class.new(image_path(:exif))
           expect(subject.exif["ExifVersion"]).to eq("0220")
         end unless ENV["CI"]
+
+        it "handles no EXIF data" do
+          subject = described_class.new(image_path(:no_exif))
+          expect(subject.exif).to eq({})
+        end
       end
 
       describe "#resolution" do
@@ -415,7 +420,12 @@ require "webmock/rspec"
         it "returns a hash of verbose information" do
           expect(subject.details["Format"]).to match /^JPEG/
           if MiniMagick.cli == :imagemagick
-            expect(subject.details["Channel depth"]["Red"]).to eq "8-bit"
+            if Gem::Version.new(MiniMagick.cli_version) < Gem::Version.new('7.0.0')
+              expect(subject.details["Channel depth"]["red"]).to eq "8-bit"
+            else
+              expect(subject.details["Channel depth"]["Red"]).to eq "8-bit"
+            end
+
             expect(subject.details).to have_key("Background color")
             expect(subject.details["Properties"]).to have_key("date:create")
           else
