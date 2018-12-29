@@ -1,9 +1,5 @@
 ruby-mini-magick (4.9.2-1) unstable; urgency=medium
 
-  [ Cédric Boutillier ]
-  * Add origin for imagemagick-json-change.patch
-
-  [ Utkarsh Gupta ]
   * Team upload
   * Bump Standards-Version to 4.3.0
   * New upstream version 4.9.2
@@ -54,7 +50,7 @@ ruby-mini-magick (4.4.0-1) unstable; urgency=medium
 
 ruby-mini-magick (4.3.6-2) unstable; urgency=medium
 
-  * Reupload to unstable 
+  * Reupload to unstable
 
  -- Pirate Praveen <praveen@debian.org>  Sat, 09 Jan 2016 00:30:31 +0530
 
@@ -110,7 +106,7 @@ ruby-mini-magick (4.2.3-1) unstable; urgency=medium
 ruby-mini-magick (4.2.0-2) unstable; urgency=medium
 
   * Team upload.
-  * Re-upload to unstable. 
+  * Re-upload to unstable.
 
  -- Pirate Praveen <praveen@debian.org>  Wed, 29 Apr 2015 13:18:00 +0530
 
@@ -125,7 +121,7 @@ ruby-mini-magick (4.2.0-1) experimental; urgency=medium
 ruby-mini-magick (4.0.1-2) experimental; urgency=medium
 
   * Team upload.
-  * Rebuild for fixing gemspec version. 
+  * Rebuild for fixing gemspec version.
 
  -- Pirate Praveen <praveen@debian.org>  Sun, 30 Nov 2014 04:01:35 +0530
 
@@ -161,7 +157,7 @@ ruby-mini-magick (3.7.0-1) unstable; urgency=medium
 
   * New upstream release
   * ruby tests are moved from test/ to spec, refreshing patches
-  * updating Build-Dep to new requirements by upstream tests 
+  * updating Build-Dep to new requirements by upstream tests
 
  -- Markus Tornow <tornow@riseup.net>  Thu, 19 Dec 2013 02:46:19 +0000
 
@@ -175,8 +171,8 @@ ruby-mini-magick (3.6.0+gh-1) unstable; urgency=low
 
 ruby-mini-magick (3.5.0-2) unstable; urgency=low
 
-  * Applying patch remove-remote-test by Felix Geyer (thanks to him) 
-    to disable tests requiring network connectivity (Closes: #706517) 
+  * Applying patch remove-remote-test by Felix Geyer (thanks to him)
+    to disable tests requiring network connectivity (Closes: #706517)
 
  -- Markus Tornow <tornow@riseup.net>  Thu, 09 May 2013 17:51:29 +0200
 
