@@ -31,9 +31,9 @@ RSpec.describe MiniMagick do
       expect(described_class.cli_version).to match(/^\d+\.\d+\.\d+-\d+$/)
     end
 
-    it "returns GraphicsMagick's version" do
-      allow(described_class).to receive(:cli).and_return(:graphicsmagick)
-      expect(described_class.cli_version).to match(/^\d+\.\d+\.\d+$/)
-    end
+   # it "returns GraphicsMagick's version" do
+   #   allow(described_class).to receive(:cli).and_return(:graphicsmagick)
+   #   expect(described_class.cli_version).to match(/^\d+\.\d+\.\d+$/)
+   # end
   end
 end

@@ -12,7 +12,7 @@ Origin: https://github.com/MadeInSyria/minimagick/commit/a3a92ed31bc750901078b3a
 
 --- a/lib/mini_magick/image/info.rb
 +++ b/lib/mini_magick/image/info.rb
-@@ -157,10 +157,10 @@
+@@ -158,10 +158,10 @@
          @info["data"] ||= (
            json = MiniMagick::Tool::Convert.new do |convert|
              convert << path
