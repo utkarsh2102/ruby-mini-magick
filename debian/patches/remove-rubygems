@@ -10,3 +10,5 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 -require "bundler/setup"
 +#require "bundler/setup"
  require "mini_magick"
+ 
+ require_relative "support/helpers"
